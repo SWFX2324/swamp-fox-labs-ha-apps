@@ -1,6 +1,6 @@
 <p align="center"><img src="assets/swamp-fox-labs-logo-dark.svg" width="420" alt="Swamp Fox Labs"></p>
 
-# Swamp Fox Labs Apps
+# Swamp Fox Labs Home Assistant Apps
 
 Home Assistant apps (add-ons) by Swamp Fox Labs, KR4FCD.
 
