@@ -37,9 +37,17 @@ test('HF bands run 160 m to 10 m', () => {
   assert.deepEqual(H.HF_BANDS.map(b => b[0]), ['160m', '80m', '60m', '40m', '30m', '20m', '17m', '15m', '12m', '10m']);
 });
 
+test('ratings are measured against the operational MUF, up to 20% above the MUF', () => {
+  assert.equal(H.mufScore(1), 3);
+  assert.equal(H.mufScore(1.08), 2);
+  assert.equal(H.mufScore(1.15), 1);
+  assert.equal(H.mufScore(1.25), 0);
+});
+
 test('band rating follows the MUF, absorption and Kp', () => {
   assert.equal(H.rateBand(14.1, 25, -20, 2), 'good');
-  assert.equal(H.rateBand(28.4, 25, -20, 2), 'closed');
+  assert.equal(H.rateBand(28.4, 25, -20, 2), 'poor', '14% above the MUF');
+  assert.equal(H.rateBand(28.4, 22, -20, 2), 'closed');
   assert.equal(H.rateBand(14.1, 0, -20, 2), null);
   // 160 m in daylight is limited by D-layer absorption.
   assert.equal(H.rateBand(1.9, 10, 45, 1), 'poor');

@@ -203,7 +203,8 @@ A simplified model in the spirit of ITU-R P.533, not VOACAP:
    up to 4000 km, at each hop up to 7000 km, and at points 2000 km from each end on
    longer paths.
 2. foF2 at each control point comes from a small model driven by the sunspot number
-   (from today's solar flux) and the sun's height there, **anchored to live
+   (from today's solar flux) and the sun's height there, checked against real
+   ionosonde readings at today's low sunspot numbers, and **anchored to live
    ionosondes**: it's scaled by how far the nearest ionosonde (within 1500 km)
    differs from the model right now, or by the worldwide median when none is close.
    The anchor fades over the first hours of the outlook.
@@ -211,6 +212,10 @@ A simplified model in the spirit of ITU-R P.533, not VOACAP:
 4. D-layer absorption (George and Bradley) depends on the sun along the path, the
    sunspot number and the frequency. It closes the low bands on long daylight paths.
 5. Paths through the auroral zone lose one or two steps when Kp is 4 or more.
+6. Ratings compare each band with the path MUF. The MUF is a median, and signals
+   get through above it, so a band is **good** up to the MUF, **fair** up to 10%
+   above it, **poor** up to 20% above, and **closed** beyond that. The same scale
+   rates the bands in the *At your QTH now* column.
 
 **Model check.** Every 15 minutes the app compares the model with reality: it takes
 the long-distance paths (2000 km or more) that PSKReporter shows being decoded near
@@ -218,8 +223,11 @@ you and records how the model rated each one at that moment. After a few days th
 Propagation tab shows how often the model agreed, for example "of 1,400 real paths
 heard near you, the model rated 71% fair or good". The check uses data the app has
 already fetched, so it adds no PSKReporter traffic, and the log stores only bands,
-counts and ratings (no callsigns). It stays on your install, up to about 3 MB;
-**Download the log** saves it if you'd like to send it in to help tune the model.
+counts, ratings and the 4-character grid squares at each end of the rated paths
+(no callsigns). It stays on your install and holds about a month (10 MB) before
+dropping its older half; **Download the log** saves it if you'd like to send it in
+to help tune the model. The note covers the current model only, and for a while
+also shows how the model before 1.7.0 did.
 
 Treat it as a guide to when and where to listen. It doesn't know about noise at
 either end, antennas, power, sporadic-E, or flares and storms that haven't happened

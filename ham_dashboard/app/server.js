@@ -1474,8 +1474,14 @@ async function api(route, q, res, req) {
     case '/api/paths':
       return send(res, 200, { paths: readPaths(), max: MAX_SAVED_PATHS });
     case '/api/accuracy': {
+      // The note covers the current model only; previous is the last model's
+      // record, kept for comparison.
       const records = accuracyLog.read();
-      return send(res, 200, { week: Accuracy.summarize(records, Date.now() - 7 * DAY), all: Accuracy.summarize(records, 0), dxKm: Accuracy.DX_KM });
+      const current = records.filter(Accuracy.isCurrent);
+      return send(res, 200, {
+        week: Accuracy.summarize(current, Date.now() - 7 * DAY), all: Accuracy.summarize(current, 0),
+        previous: Accuracy.summarize(records.filter(r => !Accuracy.isCurrent(r)), 0), dxKm: Accuracy.DX_KM,
+      });
     }
     case '/api/accuracy.jsonl': {
       let body = '';

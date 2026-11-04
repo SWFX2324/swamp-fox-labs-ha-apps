@@ -103,13 +103,19 @@
     return best && best.dist <= 3000 ? best : null;
   }
 
+  // Score (3 good … 0 closed) from frequency / MUF. The MUF is the median
+  // (basic) MUF, and real signals get through above it: ITU-R P.1240's
+  // operational MUF runs 10–35% higher, and the app's own accuracy log found
+  // paths decoded near the QTH at about 15% above the model's MUF. So a band is
+  // good up to the MUF, fair to 10% above it and poor to 20% above.
+  const mufScore = r => (r <= 1 ? 3 : r <= 1.1 ? 2 : r <= 1.2 ? 1 : 0);
+
   // Heuristic DX rating for one band at the QTH: compares the band to the
   // nearest ionosonde's MUF(3000), then applies daytime D-layer absorption on
   // the low bands and a geomagnetic penalty.
   function rateBand(mhz, muf, sunAlt, kp) {
     if (!muf) return null;
-    const r = mhz / muf;
-    let score = r <= 0.85 ? 3 : r <= 0.95 ? 2 : r <= 1.05 ? 1 : 0;
+    let score = mufScore(mhz / muf);
     if (score > 0 && sunAlt > 10) {
       if (mhz < 4) score = Math.min(score, 1);
       else if (mhz < 6) score = Math.min(score, 2);
@@ -122,6 +128,6 @@
 
   return {
     RAD, gridToLatLon, latLonToGrid, distanceKm, bearingDeg, compass,
-    sunPosition, sunAltitude, sunTimes, HF_BANDS, RATING, nearestIonosonde, rateBand,
+    sunPosition, sunAltitude, sunTimes, HF_BANDS, RATING, nearestIonosonde, mufScore, rateBand,
   };
 });

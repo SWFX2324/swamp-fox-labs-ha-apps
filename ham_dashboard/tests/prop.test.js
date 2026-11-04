@@ -58,6 +58,14 @@ test('foF2 model: day above night, more sunspots means higher', () => {
   near(P.modelFoF2(QTH, noon, 100), 10.5, 1.5, 'midlatitude noon at SSN 100');
 });
 
+test('foF2 model matches late-2026 ionosondes at low sunspot numbers', () => {
+  // Measured at SSN 48 on 2026-11-04: Idaho 8.19 MHz at 18:30 UTC (local
+  // morning), Rome 4.25 MHz at 18:30 UTC (evening). The model used to run
+  // about 25% low at both.
+  near(P.modelFoF2({ lat: 43.81, lon: -112.68 }, Date.parse('2026-11-04T18:30:00Z'), 48), 8.19, 0.8, 'Idaho');
+  near(P.modelFoF2({ lat: 41.8, lon: 12.5 }, Date.parse('2026-11-04T18:30:00Z'), 48), 4.25, 0.5, 'Rome');
+});
+
 test('live ionosonde readings scale the model nearby', () => {
   const t = Date.parse('2026-10-26T20:00:00Z');
   const st = { name: 'Near', lat: 34.6, lon: -117, fof2: 1.5 * P.modelFoF2({ lat: 34.6, lon: -117 }, t, 100), md: '3.4' };

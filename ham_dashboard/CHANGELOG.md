@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.7.0
+
+**Model tuning**, from 10 days of the app's own accuracy log (about 100,000 real
+long-distance paths decoded near the QTH) and live ionosonde readings.
+
+- **The model was pessimistic, and is less so now.** On 30 m to 10 m it rated
+  only about two thirds of the paths PSKReporter showed open as fair or good
+  (78% counting the low bands, which it nearly always got right), and it missed
+  most 10 m and 12 m openings. Replaying the log on 40 m to 10 m, the new model
+  rates about 86% fair or good, up from 64%, while rating hardly any closed
+  paths open (about 2%).
+- **foF2 runs higher at low sunspot numbers.** At today's sunspot numbers (33–48)
+  the model ran about 25% below live ionosondes, day and night. It's lifted there,
+  which matters most for the 24-hour outlook (where the live anchor fades) and
+  for the *model MUF* fallback in the band table. From SSN 100 up it's unchanged.
+- **Ratings use the operational MUF.** The MUF is a median, and signals get
+  through above it (ITU-R P.1240; the log found decodes about 15% above the
+  model's MUF). A band is now good up to the MUF, fair to 10% above, poor to 20%
+  above. This applies to path ratings, the *At your QTH now* column and the band
+  sensors, so expect more bands rated open, mostly on 10–17 m.
+- **20 m at night is still rated closed** most of the time. Those openings are
+  real but thin (about 5 long-distance paths per check, against 76 by day), and
+  the model now puts the best of them just past *poor*. The log will show
+  whether it needs more.
+- **The accuracy log records grid squares** at both ends of each rated path (no
+  callsigns), so the next tuning can be replayed exactly. It also notes which
+  model rated each check, holds about a month (10 MB, up from 3 MB), and the
+  Model check note shows the old model's score next to the new one for comparison.
+
 ## 1.6.4
 
 The repository is now **swamp-fox-labs-ha-apps** (it was swamp-fox-labs-apps).

@@ -2453,7 +2453,8 @@
     const el = $('#propCheck');
     el.hidden = !(w.sampled >= 20);
     if (el.hidden) return;
-    el.innerHTML = `<b>Model check</b>, last 7 days: of ${w.sampled.toLocaleString()} real paths over ${fmtDist(d.dxKm)} heard near you, the model rated ${Math.round(w.share * 100)}% fair or good at the time. <a href="api/accuracy.jsonl" download>Download the log</a> (no callsigns) if you’d like to help tune it.`;
+    const prev = d.previous?.sampled >= 20 ? ` The model before 1.7.0 managed ${Math.round(d.previous.share * 100)}%.` : '';
+    el.innerHTML = `<b>Model check</b>, last 7 days: of ${w.sampled.toLocaleString()} real paths over ${fmtDist(d.dxKm)} heard near you, the model rated ${Math.round(w.share * 100)}% fair or good at the time.${prev} <a href="api/accuracy.jsonl" download>Download the log</a> (no callsigns) if you’d like to help tune it.`;
   }
 
   function openProp() {
@@ -2622,6 +2623,7 @@
 
   // Highlights per version, shown once after an update so new features get found.
   const WHATS_NEW = [
+    ['1.7.0', ['Propagation ratings are tuned from your accuracy log: fewer missed openings, most of all on 10–17 m. The Model check on the Propagation tab compares old and new.']],
     ['1.6.3', ['“At your QTH now” no longer goes blank without a nearby ionosonde: it uses the propagation model and says so in the header.']],
     ['1.6.1', ['Everyone in your Home Assistant can open the dashboard; only admins can change setup and saved paths.']],
     ['1.6.0', ['Ready-made Home Assistant blueprints for band openings, DX spots, nearby POTA and lightning; the Documentation tab has import links.']],

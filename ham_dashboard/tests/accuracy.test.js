@@ -32,6 +32,10 @@ test('a check rates real long paths and counts nearby monitors', () => {
   assert.equal(r.bands['40m'].paths, 0);
   assert.equal(r.bands['15m'], undefined, 'no monitors, no entry');
   assert.doesNotMatch(JSON.stringify(r), /DL1AA|K6RX|W6LOC/, 'no callsigns stored');
+  assert.deepEqual(r.bands['20m'].sample, ['DM13JO31', 'DM04PM95'], 'grids at both ends, for replay');
+  assert.equal(r.model, A.MODEL);
+  assert.ok(A.isCurrent(r));
+  assert.ok(!A.isCurrent({ t: r.t, bands: {} }), 'records from before 1.7.0 are the old model');
 });
 
 test('summary: share of real paths the model rated fair or good', () => {

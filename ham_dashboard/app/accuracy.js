@@ -9,7 +9,9 @@
 //   model rated the paths to the 18 NCDXF beacon sites. A band with busy
 //   monitors but nothing long-distance heard, while the model rates it open,
 //   points at the model being too optimistic.
-// No callsigns are stored: only bands, counts and ratings.
+// - sample: the 4-character grids at both ends of the rated paths
+//   ("DM13JO31"), so a changed model can be replayed against them later.
+// No callsigns are stored: only bands, grids, counts and ratings.
 
 const fs = require('fs');
 const HamCore = require('./static/hamcore');
@@ -18,6 +20,9 @@ const Prop = require('./prop');
 const NEAR_KM = 800;
 const DX_KM = 2000;
 const SAMPLE_PER_BAND = 25;
+// Which model rated the record: 1 up to 1.6.x, 2 from 1.7.0 (MUF lifted at low
+// sunspot numbers, ratings measured against the operational MUF).
+const MODEL = 2;
 const HF_EDGES = [
   ['160m', 1800, 2000], ['80m', 3500, 4000], ['60m', 5330, 5410], ['40m', 7000, 7300], ['30m', 10100, 10150],
   ['20m', 14000, 14350], ['17m', 18068, 18168], ['15m', 21000, 21450], ['12m', 24890, 24990], ['10m', 28000, 29700],
@@ -43,19 +48,20 @@ function check(reports, pos, inputs, targets, now = Date.now()) {
     if (!tx || HamCore.distanceKm(rx, tx) < DX_KM) continue;
     // One path per far-end 4-character grid, so a busy area doesn't dominate.
     const key = String(r.txGrid).slice(0, 4).toUpperCase();
-    if (!b.paths.has(key)) b.paths.set(key, { rx, tx });
+    if (!b.paths.has(key)) b.paths.set(key, { rx, tx, grids: String(r.rxGrid).slice(0, 4).toUpperCase() + key });
   }
   const rate = (from, to, band) => Prop.evaluate(Prop.pathGeometry(from, to), now, { bands: [[band, MHZ[band]]], ssn: inputs.ssn, kp: inputs.kp, cal }).bands[band].rating;
   const bands = {};
   for (const [band, b] of Object.entries(perBand)) {
     if (!b.monitors.size) continue;
     const heard = emptyRatings();
-    for (const { rx, tx } of [...b.paths.values()].slice(0, SAMPLE_PER_BAND)) heard[rate(rx, tx, band)]++;
+    const sample = [...b.paths.values()].slice(0, SAMPLE_PER_BAND);
+    for (const { rx, tx } of sample) heard[rate(rx, tx, band)]++;
     const beacons = emptyRatings();
     for (const t of targets) beacons[rate(pos, t, band)]++;
-    bands[band] = { monitors: b.monitors.size, paths: b.paths.size, heard, beacons };
+    bands[band] = { monitors: b.monitors.size, paths: b.paths.size, heard, beacons, sample: sample.map(p => p.grids) };
   }
-  return { t: new Date(now).toISOString(), ssn: Math.round(inputs.ssn), kp: inputs.kp, bands };
+  return { t: new Date(now).toISOString(), model: MODEL, ssn: Math.round(inputs.ssn), kp: inputs.kp, bands };
 }
 
 // Totals over records newer than sinceMs: how often real long-distance paths
@@ -79,10 +85,10 @@ function summarize(records, sinceMs) {
   };
 }
 
-// The log is one JSON record per line. When it passes maxBytes, the older half
-// is dropped.
+// The log is one JSON record per line, about 3 KB each, so 10 MB holds about a
+// month. When it passes maxBytes, the older half is dropped.
 class AccuracyLog {
-  constructor(file, maxBytes = 3 * 1024 * 1024) {
+  constructor(file, maxBytes = 10 * 1024 * 1024) {
     this.file = file;
     this.maxBytes = maxBytes;
   }
@@ -104,4 +110,7 @@ class AccuracyLog {
   }
 }
 
-module.exports = { check, summarize, AccuracyLog, DX_KM };
+// Records from the model now in use (records from before 1.7.0 have no model).
+const isCurrent = r => (r.model || 1) === MODEL;
+
+module.exports = { check, summarize, isCurrent, AccuracyLog, DX_KM, MODEL };

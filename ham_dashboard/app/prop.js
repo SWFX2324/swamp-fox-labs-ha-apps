@@ -92,6 +92,12 @@ const sunAltAt = (p, t) => HamCore.sunAltitude(HamCore.sunPosition(new Date(t)),
 // SSN 100, 14 at 200). The F2 layer lags the sun by about an hour and is lit
 // from below the horizon, so the sun's height is taken an hour earlier and
 // raised by 10°. High geomagnetic latitudes run lower.
+//
+// At low sunspot numbers the formula ran about 25% below live ionosondes
+// (late 2026, SSN 33–48, day and night alike), so it's lifted there. From SSN
+// 100 up it's unchanged until there's data to check it against.
+const lowSsnLift = s => 1 + 0.25 * Math.min(1, Math.max(0, (100 - s) / 50));
+
 function modelFoF2(p, t, ssn) {
   const s = Math.min(Math.max(ssn, 0), 250);
   const day = 5 + 0.07 * s - 0.00012 * s * s;
@@ -100,7 +106,7 @@ function modelFoF2(p, t, ssn) {
   const night = (2.4 + 0.024 * s) * (1 - 0.2 * Math.min(1, Math.max(0, (-sunNow - 18) / 40)));
   const alt = sunNow + 10;
   const x = Math.max(0, Math.sin(Math.min(alt, 90) * RAD));
-  let fo = night + (day - night) * Math.pow(x, 0.6);
+  let fo = (night + (day - night) * Math.pow(x, 0.6)) * lowSsnLift(s);
   const ml = Math.abs(geomagLat(p));
   if (ml > 60) fo *= 0.8;
   else if (ml > 50) fo *= 0.9;
@@ -153,7 +159,6 @@ function absorptionIndex(p, t, ssn) {
 
 // ---------------------------------------------------------------- path at one time
 
-const scoreOfRatio = r => (r <= 0.85 ? 3 : r <= 0.95 ? 2 : r <= 1.05 ? 1 : 0);
 const scoreOfLoss = dB => (dB < 30 ? 3 : dB < 55 ? 2 : dB < 85 ? 1 : 0);
 
 // Where the path MUF is set, following ITU-R P.533: the midpoint up to
@@ -202,7 +207,7 @@ function evaluate(geo, t, opts) {
   const bands = {};
   for (const [name, mhz] of opts.bands) {
     const loss = (677.2 * secD * absorb) / (Math.pow(mhz + 1.2, 1.98) + 10.2);
-    const mufScore = scoreOfRatio(mhz / muf);
+    const mufScore = HamCore.mufScore(mhz / muf);
     const lossScore = scoreOfLoss(loss);
     const score = Math.max(0, Math.min(mufScore, lossScore) - (Math.min(mufScore, lossScore) > 0 ? penalty : 0));
     bands[name] = {
