@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.7.1
+
+Maintenance: nothing changes in normal use.
+
+- The Home Assistant base image (Alpine 3.24) is updated to its latest build,
+  with the newest Alpine security fixes.
+- The image build signs in to the GitHub container registry with
+  `docker/login-action` 4.7.0.
+
 ## 1.7.0
 
 **Model tuning**, from 10 days of the app's own accuracy log (about 100,000 real
