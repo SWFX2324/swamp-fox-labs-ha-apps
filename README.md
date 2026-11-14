@@ -26,6 +26,7 @@ ready image instead of building one on your machine.
 | --- | --- | --- |
 | <img src="ham_dashboard/icon.png" width="40"> | [Ham Radio Dashboard](ham_dashboard) | Point-to-point HF propagation to anywhere (now and the next 24 hours, checked against PSKReporter), HF band conditions (160–10 m), NOAA R/S/G scales, SFI, sunspots, K/A index, gray line and MUF maps, DX cluster spots, PSKReporter and NOAA alerts, plus nearby repeaters, live APRS, POTA spots, satellite passes, QRZ/FCC callsign lookup, measured band activity, 6 m and 2 m openings, NCDXF beacon schedule, a band plan and GMRS/FRS/CB reference, storm safety, and Home Assistant sensors and alerts. |
 | <img src="adsb_tracker/icon.png" width="40"> | [ADS-B Tracker](adsb_tracker) | Find a flight by its ticket number, callsign, registration or ICAO hex and follow it anywhere in the world on a live map, from public adsb.fi data with no receiver or account. Altitude, speed, climb rate, emergency squawks and the observed trail; tracking stops by itself when the flight lands or the aircraft starts its next trip. |
+| <img src="weather_observatory/icon.png" width="40"> | [Weather Observatory](weather_observatory) | Your Home Assistant weather as a full-page station: current conditions, a 24-hour chart of temperature, rain and wind, the daily outlook and what Home Assistant recorded over the last day, plus animated precipitation radar, National Weather Service alerts and the nearest station's measurements, modeled air quality and the sun. Every panel shows its source and age; missing values stay blank. |
 
 <p>
   <img src="docs/screenshot-weather.png" alt="Space weather view: solar conditions, storm safety, NOAA scales and HF band conditions" width="66%">
@@ -74,6 +75,21 @@ fake adsb.fi and a fake clock:
 node --test "adsb_tracker/tests/*.test.js"
 ```
 
+Weather Observatory is plain Node.js too. To preview it against a fake Home Assistant
+and fake weather services (real RainViewer radar optional), behind the ingress
+stand-in:
+
+```bash
+FAKE_WORLD=alerts FAKE_RADAR=real node weather_observatory/tests/dev.js
+```
+
+Then open http://localhost:8096/api/hassio_ingress/Zx9_test-token/. Its tests run
+offline:
+
+```bash
+node --test "weather_observatory/tests/*.test.js"
+```
+
 ### Releases
 
 Every push to `main` that touches an app's folder runs two GitHub Actions:
@@ -82,7 +98,7 @@ Every push to `main` that touches an app's folder runs two GitHub Actions:
   check of every script, the unit and end-to-end tests, a check of the blueprints,
   and each image run under its enforced AppArmor profile.
 - **Build images**: builds `ghcr.io/swfx2324/<app>-amd64` and `<app>-aarch64`
-  (`ham-dashboard`, `adsb-tracker`) for each app that changed, tagged with the
+  (`ham-dashboard`, `adsb-tracker`, `weather-observatory`) for each app that changed, tagged with the
   version in its `config.yaml` and `latest`.
   Pull requests and other branches only build, so a released version's image is
   never replaced by unreleased code.

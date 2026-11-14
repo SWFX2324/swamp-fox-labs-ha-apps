@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [ham_dashboard, adsb_tracker]
+        app: [ham_dashboard, adsb_tracker, weather_observatory]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: frenck/action-app-linter@b9cfd1bc62ba60d2c4fc96317b5f7ada5923f4a7 # v2.21.1
@@ -41,11 +41,13 @@ jobs:
         with:
           node-version: 24
       - name: Syntax check
-        run: for f in $(find ham_dashboard/app adsb_tracker/app adsb_tracker/tests -name '*.js' -not -path '*/lib/*'); do node --check "$f" || exit 1; done
+        run: for f in $(find ham_dashboard/app adsb_tracker/app adsb_tracker/tests weather_observatory/app weather_observatory/tests -name '*.js' -not -path '*/lib/*'); do node --check "$f" || exit 1; done
       - name: Ham Radio Dashboard tests
         run: node --test "ham_dashboard/tests/*.test.js"
       - name: ADS-B Tracker tests
         run: node --test "adsb_tracker/tests/*.test.js"
+      - name: Weather Observatory tests
+        run: node --test "weather_observatory/tests/*.test.js"
       - name: Blueprints
         run: |
           python3 -c "import yaml" 2>/dev/null || pip install --quiet pyyaml
@@ -79,3 +81,17 @@ jobs:
           sudo apparmor_parser -r -W adsb_tracker/apparmor.txt
       - name: Run the image and call every endpoint
         run: bash .github/scripts/apparmor_smoke_adsb.sh
+
+  apparmor-weather:
+    name: Image under AppArmor (weather_observatory)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build the image
+        run: docker build --quiet -t weather-observatory:ci --build-arg BUILD_VERSION=ci weather_observatory
+      - name: Load the AppArmor profile
+        run: |
+          sudo apt-get install -y -qq apparmor > /dev/null
+          sudo apparmor_parser -r -W weather_observatory/apparmor.txt
+      - name: Run the image and call every endpoint
+        run: bash .github/scripts/apparmor_smoke_weather.sh

@@ -1,0 +1,13 @@
+configuration:
+  weather_entity:
+    name: Weather entity
+    description: The weather entity to show, for example weather.forecast_home. Leave empty to use weather.forecast_home, or the first working weather entity.
+  location_label:
+    name: Place name
+    description: Shown under the title. Leave empty to use the nearest town from the National Weather Service, or your Home Assistant location name.
+  nws:
+    name: National Weather Service
+    description: Active alerts and the nearest station observation. US only; turn it off elsewhere.
+  air_quality:
+    name: Air quality
+    description: Modeled US AQI, PM2.5 and PM10 from Open-Meteo (CAMS).

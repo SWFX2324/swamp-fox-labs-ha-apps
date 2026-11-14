@@ -1,0 +1,28 @@
+name: Weather Observatory
+version: "1.0.0"
+slug: weather_observatory
+description: Your Home Assistant weather with hourly and daily charts, animated radar, NWS alerts, a nearby station, air quality and the sun
+url: https://github.com/SWFX2324/swamp-fox-labs-ha-apps/tree/main/weather_observatory
+image: ghcr.io/swfx2324/weather-observatory-{arch}
+arch:
+  - aarch64
+  - amd64
+init: false
+ingress: true
+# Reads states, the home location, forecasts (weather.get_forecasts) and
+# Recorder history. It never calls a service that changes anything.
+homeassistant_api: true
+panel_icon: mdi:weather-partly-cloudy
+panel_title: Weather
+# Every Home Assistant user can open the panel; it only reads weather data.
+panel_admin: false
+options:
+  weather_entity: ""
+  location_label: ""
+  nws: true
+  air_quality: true
+schema:
+  weather_entity: "match(^(weather\.[a-z0-9_]+)?$)"
+  location_label: "str?"
+  nws: bool
+  air_quality: bool

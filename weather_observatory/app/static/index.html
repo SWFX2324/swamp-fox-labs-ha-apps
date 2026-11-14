@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weather Observatory</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="lib/leaflet/leaflet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Gradients shared by every weather icon on the page. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="wx-gold" x2="0" y2="1"><stop stop-color="#ffe5a2"/><stop offset="1" stop-color="#edb352"/></linearGradient>
+      <linearGradient id="wx-cloud" x2="0" y2="1"><stop stop-color="#e9f1f7"/><stop offset="1" stop-color="#8aa6bc"/></linearGradient>
+      <linearGradient id="wx-fill" x2="0" y2="1"><stop stop-color="var(--accent)" stop-opacity=".22"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient>
+    </defs>
+  </svg>
+
+  <div class="app-banner" id="offline" role="alert" hidden>Can’t reach the Weather Observatory app. It may be restarting; retrying…</div>
+
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 120 100" aria-hidden="true"><circle cx="50" cy="39" r="22" fill="url(#wx-gold)"/><path d="M34 73a18 18 0 0 1 0-36 25 25 0 0 1 48-1 18 18 0 1 1 5 37Z" fill="url(#wx-cloud)"/></svg>
+      <div>
+        <h1>Weather Observatory</h1>
+        <p class="subtitle" id="location">Home area</p>
+      </div>
+    </div>
+    <span id="connection" class="badge" data-state="off" role="status">Connecting</span>
+    <button id="refresh" type="button" class="ghost" aria-label="Refresh all weather data">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.65 6.35A8 8 0 1 0 19.73 14h-2.08A6 6 0 1 1 12 6a5.9 5.9 0 0 1 4.22 1.78L13 11h7V4z"/></svg>
+      <span class="long">Refresh</span>
+    </button>
+    <button id="theme" type="button" class="ghost icon" aria-label="Appearance: automatic" title="Appearance: automatic">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20m0 18V4a8 8 0 0 1 0 16"/></svg>
+    </button>
+  </header>
+
+  <main class="wrap">
+    <section id="alerts" aria-live="polite" aria-label="Weather alerts"></section>
+
+    <div class="top-grid">
+      <section class="card hero" id="current" aria-label="Current conditions"><div class="empty">Loading current conditions…</div></section>
+
+      <section class="card radar" aria-label="Precipitation radar">
+        <div class="card-head">
+          <div>
+            <h2>Precipitation radar</h2>
+            <div class="card-sub">Past 2 hours · drag or pinch to explore</div>
+          </div>
+          <span class="legend" aria-label="Radar colours run from light to heavy precipitation">Light <i></i> Heavy</span>
+        </div>
+        <div class="mapwrap">
+          <div id="map" class="map" role="region" aria-label="Radar map. Drag to pan, use the plus and minus buttons or pinch to zoom."></div>
+          <div class="map-note" id="radar-error" role="status" hidden></div>
+        </div>
+        <div class="radar-bottom">
+          <button id="play" type="button" class="icon" aria-label="Play radar animation" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
+          </button>
+          <input id="scrub" type="range" min="0" max="0" value="0" aria-label="Radar frame" disabled>
+          <span class="frame-time" id="frame-time">—</span>
+        </div>
+        <div class="radar-caption"><span id="frame-age">Waiting for the radar feed</span></div>
+      </section>
+    </div>
+
+    <section class="card chart-card" aria-labelledby="chart-title">
+      <div class="chart-head">
+        <div>
+          <h2 id="chart-title">The next 24 hours</h2>
+          <div class="card-sub" id="chart-source">Model forecast</div>
+        </div>
+        <div class="tabs" role="group" aria-label="Chart shows">
+          <button type="button" data-metric="temperature" aria-pressed="true">Temperature</button>
+          <button type="button" data-metric="precipitation" aria-pressed="false">Rain</button>
+          <button type="button" data-metric="wind_speed" aria-pressed="false">Wind</button>
+          <button type="button" data-metric="history" aria-pressed="false">Past 24h</button>
+        </div>
+      </div>
+      <div id="chart"><div class="empty">Waiting for the hourly forecast…</div></div>
+    </section>
+
+    <div class="bottom-grid">
+      <section class="card" aria-labelledby="daily-title">
+        <div class="card-head"><h2 id="daily-title">Daily outlook</h2><span class="card-tag">Model forecast</span></div>
+        <div id="daily"><div class="empty">Waiting for the daily forecast…</div></div>
+      </section>
+      <div class="environment">
+        <section class="card" id="air" aria-label="Air quality"></section>
+        <section class="card" id="solar" aria-label="Sun and daylight"></section>
+      </div>
+    </div>
+
+    <section class="card" aria-labelledby="station-title">
+      <div class="card-head"><h2 id="station-title">Nearby station observation</h2><span class="card-tag">National Weather Service</span></div>
+      <div id="station"><div class="empty">Loading the nearest NWS observation…</div></div>
+    </section>
+
+    <footer class="foot">
+      <div id="source-status" role="status">Waiting for live data</div>
+      <details>
+        <summary>Sources &amp; data notes</summary>
+        <p>Current conditions and forecasts come from your Home Assistant weather entity; they are model estimates, not measurements at your home. Past 24h is what Home Assistant actually recorded, not a backfilled forecast. Station data are measured at a nearby NWS station, not at your home. Radar shows RainViewer’s past frames with each frame’s time. Air quality is a CAMS model estimate via Open-Meteo. Public services receive only your area rounded to 0.1° (about 11 km), never your exact location; map and radar tiles are loaded by your browser. Missing values stay blank: zero appears only when a source reports zero.</p>
+        <p><a href="https://www.weather.gov/" target="_blank" rel="noopener noreferrer">NWS</a> · <a href="https://www.rainviewer.com/" target="_blank" rel="noopener noreferrer">RainViewer</a> · <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo / CAMS</a> · <a href="https://www.esri.com/" target="_blank" rel="noopener noreferrer">Esri</a></p>
+      </details>
+      <span id="version" class="muted"></span>
+    </footer>
+  </main>
+
+  <script src="lib/leaflet/leaflet.js"></script>
+  <script src="wxcore.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

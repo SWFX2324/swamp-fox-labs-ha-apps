@@ -11,6 +11,8 @@ as soon as it's published, so the fix for a problem is to update.
 | Ham Radio Dashboard, older releases | No |
 | ADS-B Tracker, latest release | Yes |
 | ADS-B Tracker, older releases | No |
+| Weather Observatory, latest release | Yes |
+| Weather Observatory, older releases | No |
 
 ## Reporting a vulnerability
 
@@ -31,6 +33,10 @@ crediting you unless you'd rather not be named.
 - The ADS-B Tracker's server and page (`adsb_tracker/app`): for example making
   it fetch anything other than its fixed adsb.fi paths, or reaching it other than
   through ingress.
+- Weather Observatory's server and page (`weather_observatory/app`): for example
+  making it call a Home Assistant service that changes something, exposing its
+  token or the exact home location, fetching anything other than its fixed
+  weather sources, or reaching it other than through ingress.
 - The image and how it's built: the AppArmor profile, the Dockerfile, the GitHub
   Actions workflows and image signing.
 
