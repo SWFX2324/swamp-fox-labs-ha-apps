@@ -25,6 +25,8 @@
   --land-edge: #a9b19b;
   --night: 12, 22, 48;
   --radius: 14px;
+  /* Faint topographic texture behind the page (shared with RF Toolkit); cards stay solid. */
+  --topo: url("assets/topo-light.svg");
   --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
 }
 @media (prefers-color-scheme: dark) {
@@ -48,6 +50,7 @@
     --land: #4d5a44;
     --land-edge: #627058;
     --night: 0, 4, 14;
+    --topo: url("assets/topo-dark.svg");
   }
 }
 :root[data-theme="dark"] {
@@ -56,13 +59,14 @@
   --text: #f0efec; --text-2: #c3c2b7; --muted: #8f8d85; --accent: #3987e5; --heat-fair: 40%; --heat-poor: 14%;
   --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --closed: #6f6d67; --grid-line: #2a2a27;
   --ocean: #1c2d42; --land: #4d5a44; --land-edge: #627058; --night: 0, 4, 14;
+  --topo: url("assets/topo-dark.svg");
 }
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--topo) repeat 0 0 / 720px 720px, var(--bg);
   color: var(--text);
   font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }

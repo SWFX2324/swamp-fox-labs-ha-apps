@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.2
+
+- **Topographic background.** A faint contour-line texture now sits behind every
+  page, the same one RF Toolkit and the Home Assistant dashboards use. Cards stay
+  solid, and it switches to a light version in light mode.
+
 ## 1.7.1
 
 Maintenance: nothing changes in normal use.
