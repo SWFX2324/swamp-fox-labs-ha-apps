@@ -14,6 +14,28 @@ receiver, account or API key needed.
   request budget and cooldown.
 - Light and dark appearance, phone and desktop layouts.
 
+<p>
+  <img src="https://raw.githubusercontent.com/SWFX2324/swamp-fox-labs-ha-apps/main/docs/screenshots/adsb_tracker/desktop.png" alt="Tracking a flight: the aircraft on the map with its trail, and its altitude, speed and climb rate" width="72%">
+  <img src="https://raw.githubusercontent.com/SWFX2324/swamp-fox-labs-ha-apps/main/docs/screenshots/adsb_tracker/phone.png" alt="ADS-B Tracker on a phone" width="22%">
+</p>
+
 See the [documentation](DOCS.md) for details.
 
 Aircraft data © adsb.fi, for personal, non-commercial use. Map tiles © Esri.
+
+## Developing
+
+Plain Node.js with no dependencies. To preview it with a synthetic flight (Raleigh to
+Los Angeles) behind a stand-in for Home Assistant's ingress proxy, so nothing touches
+the real feed:
+
+```bash
+node adsb_tracker/tests/dev.js
+```
+
+Then open http://localhost:8098/api/hassio_ingress/Zx9_test-token/. The tests use a
+fake adsb.fi and a fake clock:
+
+```bash
+node --test "adsb_tracker/tests/*.test.js"
+```

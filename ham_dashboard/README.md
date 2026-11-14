@@ -43,11 +43,23 @@ and dark mode.
 - **Callsign lookup** tab: QRZ.com (with your own login) or free FCC data for US
   calls, with beam heading and great-circle path from your QTH
 
+<p>
+  <img src="https://raw.githubusercontent.com/SWFX2324/swamp-fox-labs-ha-apps/main/docs/screenshot-propagation.png" alt="Propagation view: band ratings for a path to Japan, the path map and a 24-hour band-by-hour outlook" width="66%">
+  <img src="https://raw.githubusercontent.com/SWFX2324/swamp-fox-labs-ha-apps/main/docs/screenshot-phone.png" alt="The dashboard on a phone" width="24%">
+</p>
+<p>
+  <img src="https://raw.githubusercontent.com/SWFX2324/swamp-fox-labs-ha-apps/main/docs/screenshot-sats.png" alt="Satellites view: upcoming passes, sky track and Doppler" width="66%">
+</p>
+
+## Getting started
+
 Open the panel after installing and a short setup takes you through station type
 (licensed amateur, GMRS or just listening), callsign and location, or set `callsign`
 and `grid` on the **Configuration** tab. Add
 your QRZ username and password there too if you want worldwide callsign lookups.
 See the **Documentation** tab for details.
+
+## Credits
 
 Data from N0NBH/HamQSL, NOAA SWPC, KC2G, PSKReporter, HearHam, APRS-IS, POTA,
 CelesTrak, the National Weather Service, OpenStreetMap, USGS The National Map, QRZ.com, callook.info and the W3LPL, VE7CC and NC7J DX clusters. The world outline comes
@@ -57,3 +69,27 @@ domain).
 Maps use [Leaflet](https://leafletjs.com/) 1.9.4 (BSD 2-Clause License, included in
 `app/static/lib/leaflet`). Satellite orbits are computed with [satellite.js](https://github.com/shashwatak/satellite-js)
 5.0.0 (MIT License, included in `app/lib`).
+
+## Developing
+
+The backend is one Node.js file with no dependencies. To run it outside Home
+Assistant:
+
+```bash
+CALLSIGN=N0CALL GRID=DM14xd PORT=8099 node ham_dashboard/app/server.js
+```
+
+Then open http://localhost:8099. Outside Home Assistant any client may connect; set
+`INGRESS_ONLY=true` to test the "ingress proxy only" rule locally. Run the unit and
+end-to-end tests with:
+
+```bash
+node --test "ham_dashboard/tests/*.test.js"
+```
+
+The end-to-end tests start the server with every outside service replaced by saved
+responses in `ham_dashboard/tests/fixtures`, so they run offline.
+
+Home Assistant blueprints for the dashboard's events live in
+[`blueprints/automation`](../blueprints/automation); the documentation links each one
+for import.

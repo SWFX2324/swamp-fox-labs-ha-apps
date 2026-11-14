@@ -2,9 +2,15 @@
 
 # Swamp Fox Labs Home Assistant Apps
 
-Home Assistant apps (add-ons) by Swamp Fox Labs, KR4FCD.
+Home Assistant apps (add-ons) by Swamp Fox Labs, KR4FCD. Each one adds its own
+panel to the Home Assistant sidebar and works on phones and desktops, in light and
+dark mode.
 
 ## Add this repository
+
+[![Add this repository to your Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FSWFX2324%2Fswamp-fox-labs-ha-apps)
+
+Or by hand:
 
 1. In Home Assistant go to **Settings → Apps**, then open the app store.
 2. Open the **⋮** menu → **Repositories**, and add:
@@ -13,80 +19,50 @@ Home Assistant apps (add-ons) by Swamp Fox Labs, KR4FCD.
    https://github.com/SWFX2324/swamp-fox-labs-ha-apps
    ```
 
-3. The apps below appear under **Swamp Fox Labs Apps**.
+3. The apps below appear under **Swamp Fox Labs Apps**. Pick one and press
+   **Install**.
 
-Requires Home Assistant OS or a Supervised install (amd64 or aarch64).
-
-Images are prebuilt for both architectures, so installs and updates download a
-ready image instead of building one on your machine.
+Requires Home Assistant OS or a Supervised install (amd64 or aarch64). Images are
+prebuilt for both architectures, so installs and updates download a ready image
+instead of building one on your machine.
 
 ## Apps
 
-| | App | Description |
+| | App | What it does |
 | --- | --- | --- |
-| <img src="ham_dashboard/icon.png" width="40"> | [Ham Radio Dashboard](ham_dashboard) | Point-to-point HF propagation to anywhere (now and the next 24 hours, checked against PSKReporter), HF band conditions (160–10 m), NOAA R/S/G scales, SFI, sunspots, K/A index, gray line and MUF maps, DX cluster spots, PSKReporter and NOAA alerts, plus nearby repeaters, live APRS, POTA spots, satellite passes, QRZ/FCC callsign lookup, measured band activity, 6 m and 2 m openings, NCDXF beacon schedule, a band plan and GMRS/FRS/CB reference, storm safety, and Home Assistant sensors and alerts. |
-| <img src="adsb_tracker/icon.png" width="40"> | [ADS-B Tracker](adsb_tracker) | Find a flight by its ticket number, callsign, registration or ICAO hex and follow it anywhere in the world on a live map, from public adsb.fi data with no receiver or account. Altitude, speed, climb rate, emergency squawks and the observed trail; tracking stops by itself when the flight lands or the aircraft starts its next trip. |
-| <img src="weather_observatory/icon.png" width="40"> | [Weather Observatory](weather_observatory) | Your Home Assistant weather as a full-page station: current conditions, a 24-hour chart of temperature, rain and wind, the daily outlook and what Home Assistant recorded over the last day, plus animated precipitation radar, National Weather Service alerts and the nearest station's measurements, modeled air quality and the sun. Every panel shows its source and age; missing values stay blank. |
+| <img src="ham_dashboard/icon.png" width="40"> | [Ham Radio Dashboard](ham_dashboard) | HF propagation, band conditions and space weather for amateur radio, plus DX spots, repeaters, APRS, POTA, satellites and callsign lookup. |
+| <img src="adsb_tracker/icon.png" width="40"> | [ADS-B Tracker](adsb_tracker) | Find a flight by its number and follow it anywhere in the world on a live map, from public ADS-B data. |
+| <img src="weather_observatory/icon.png" width="40"> | [Weather Observatory](weather_observatory) | Your Home Assistant weather as a full-page station, with radar, NWS alerts, a nearby station and air quality. |
 
-<p>
-  <img src="docs/screenshot-weather.png" alt="Space weather view: solar conditions, storm safety, NOAA scales and HF band conditions" width="66%">
-  <img src="docs/screenshot-phone.png" alt="The dashboard on a phone" width="24%">
-</p>
-<p>
-  <img src="docs/screenshot-propagation.png" alt="Propagation view: band ratings for a path to Japan, the path map and a 24-hour band-by-hour outlook" width="66%">
-  <img src="docs/screenshot-sats.png" alt="Satellites view: upcoming passes, sky track and Doppler" width="66%">
-</p>
+Each app's page has screenshots and an overview, and its **Documentation**
+(`DOCS.md`, also on the app's **Documentation** tab in Home Assistant) covers setup,
+settings, troubleshooting and privacy.
+
+## Updates
+
+Home Assistant offers an update as soon as a new version is published here. Each
+app's changelog (`CHANGELOG.md`, also shown in Home Assistant before you update)
+lists what changed.
 
 ## Developing
 
-Each app lives in its own folder with a `config.yaml`. The Ham Radio Dashboard backend
-is one Node.js file with no dependencies. To run it outside Home Assistant:
+Every app is plain Node.js with no dependencies, in its own folder:
 
-```bash
-CALLSIGN=N0CALL GRID=DM14xd PORT=8099 node ham_dashboard/app/server.js
+```
+<app>/
+  config.yaml      Home Assistant app definition (name, version, options)
+  Dockerfile       the image: Home Assistant's base image plus Node.js
+  apparmor.txt     the enforced AppArmor profile
+  app/             server and page
+  tests/           unit and end-to-end tests, offline (outside services are faked)
+  README.md        the app's page; DOCS.md its documentation; CHANGELOG.md
 ```
 
-Then open http://localhost:8099. Outside Home Assistant any client may connect; set
-`INGRESS_ONLY=true` to test the "ingress proxy only" rule locally. Run the unit and
-end-to-end tests with:
+Each app's README says how to run it locally. All tests run with Node.js 24:
 
 ```bash
 node --test "ham_dashboard/tests/*.test.js"
-```
-
-The end-to-end tests start the server with every outside service replaced by saved
-responses in `ham_dashboard/tests/fixtures`, so they run offline.
-
-Home Assistant blueprints for the dashboard's events live in
-[`blueprints/automation`](blueprints/automation); the docs link each one for import.
-
-The ADS-B Tracker is also plain Node.js with no dependencies. To preview it with a
-synthetic flight (Raleigh to Los Angeles) behind a stand-in for Home Assistant's
-ingress proxy, so nothing touches the real feed:
-
-```bash
-node adsb_tracker/tests/dev.js
-```
-
-Then open http://localhost:8098/api/hassio_ingress/Zx9_test-token/. Its tests use a
-fake adsb.fi and a fake clock:
-
-```bash
 node --test "adsb_tracker/tests/*.test.js"
-```
-
-Weather Observatory is plain Node.js too. To preview it against a fake Home Assistant
-and fake weather services (real RainViewer radar optional), behind the ingress
-stand-in:
-
-```bash
-FAKE_WORLD=alerts FAKE_RADAR=real node weather_observatory/tests/dev.js
-```
-
-Then open http://localhost:8096/api/hassio_ingress/Zx9_test-token/. Its tests run
-offline:
-
-```bash
 node --test "weather_observatory/tests/*.test.js"
 ```
 
@@ -97,15 +73,18 @@ Every push to `main` that touches an app's folder runs two GitHub Actions:
 - **Checks** (on every push and pull request): Home Assistant's app linter, a syntax
   check of every script, the unit and end-to-end tests, a check of the blueprints,
   and each image run under its enforced AppArmor profile.
-- **Build images**: builds `ghcr.io/swfx2324/<app>-amd64` and `<app>-aarch64`
-  (`ham-dashboard`, `adsb-tracker`, `weather-observatory`) for each app that changed, tagged with the
-  version in its `config.yaml` and `latest`.
-  Pull requests and other branches only build, so a released version's image is
-  never replaced by unreleased code.
+- **Build images**: builds `ghcr.io/swfx2324/<app>-amd64` and `<app>-aarch64` for
+  each app that changed, tagged with the version in its `config.yaml` and `latest`,
+  and signs them with Cosign. Pull requests and other branches only build, so a
+  released version's image is never replaced by unreleased code.
 
 Home Assistant offers an update as soon as `config.yaml` on `main` has a new
 version, and the images take a few minutes to build. An update started in that
 window fails with "image not found"; it works once the build finishes.
+
+## Security
+
+See [SECURITY.md](SECURITY.md) to report a vulnerability.
 
 ## License
 
