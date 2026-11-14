@@ -22,7 +22,8 @@ options:
   nws: true
   air_quality: true
 schema:
-  weather_entity: "match(^(weather\.[a-z0-9_]+)?$)"
+  # Single quotes: YAML takes the backslash literally, so the regex gets \.
+  weather_entity: 'match(^(weather\.[a-z0-9_]+)?$)'
   location_label: "str?"
   nws: bool
   air_quality: bool
