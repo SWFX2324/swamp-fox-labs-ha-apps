@@ -45,6 +45,16 @@ done
 code=$(q '{"kind":"hex","value":"nothex"}')
 [[ "$code" == 400 ]] || fail "an invalid search answered $code, not 400"
 
+# The Docker HEALTHCHECK (what the Supervisor's watchdog watches) must pass
+# under the profile too.
+for _ in $(seq 1 30); do
+  health=$(docker inspect -f '{{.State.Health.Status}}' "$NAME")
+  [[ "$health" == healthy ]] && break
+  sleep 2
+done
+echo "Health: $health"
+[[ "$health" == healthy ]] || fail "the health check didn't pass: $(docker inspect -f '{{json .State.Health}}' "$NAME")"
+
 docker stop -t 20 "$NAME" > /dev/null
 
 log=$(docker logs "$NAME" 2>&1)
