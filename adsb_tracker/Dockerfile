@@ -1,6 +1,6 @@
 # Base image is pinned by digest (multi-arch: amd64 and aarch64), the same one
 # Ham Radio Dashboard uses; Dependabot proposes updates.
-FROM ghcr.io/home-assistant/base:3.24@sha256:880016115f356afc814398e17ba68a7ee66dfc1b4eaef09755ea2c9fa18ea481
+FROM ghcr.io/home-assistant/base:3.24@sha256:58422480a299b16b6ea376c2167463206d430619ed02b40cd687c8bd6875519e
 
 # Released images are built by .github/workflows/build.yaml, which passes the
 # version from config.yaml.
