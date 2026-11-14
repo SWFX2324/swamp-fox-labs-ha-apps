@@ -1,0 +1,22 @@
+name: ADS-B Tracker
+version: "1.2.0"
+slug: adsb_tracker
+description: Find a flight by number and follow it anywhere in the world, from public ADS-B data. No receiver or account needed.
+url: https://github.com/SWFX2324/swamp-fox-labs-ha-apps/tree/main/adsb_tracker
+image: ghcr.io/swfx2324/adsb-tracker-{arch}
+arch:
+  - aarch64
+  - amd64
+init: false
+ingress: true
+ingress_port: 8099
+# The Supervisor restarts the app if its web server stops answering (when the
+# app's Watchdog switch is on).
+watchdog: http://[HOST]:[PORT:8099]/api/health
+panel_icon: mdi:airplane
+panel_title: ADS-B
+# Every Home Assistant user can open the panel. It only reads public data and
+# changes nothing in Home Assistant.
+panel_admin: false
+options: {}
+schema: {}

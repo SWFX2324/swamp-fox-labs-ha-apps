@@ -1,11 +1,13 @@
-# Builds the app's container image for each architecture and publishes it to
+# Builds each app's container image for each architecture and publishes it to
 # GitHub Container Registry, so Home Assistant downloads a ready image instead
 # of building one on the user's machine. Pull requests and other branches only
 # build, so a released version's image is never replaced by unreleased code.
+# Only apps whose folder changed are built (all of them when run by hand, or
+# on a pull request that changes this workflow).
 #
 # Published images are signed with Cosign, keyless: the signature is tied to
 # this repository's workflow by GitHub's identity, so there's no key to keep
-# or leak. Anyone can check an image came from here (see DOCS.md).
+# or leak. Anyone can check an image came from here (see each app's DOCS.md).
 name: Build images
 
 on:
@@ -13,43 +15,91 @@ on:
     branches: [main]
     paths:
       - ham_dashboard/**
+      - adsb_tracker/**
       - .github/workflows/build.yaml
   pull_request:
     paths:
       - ham_dashboard/**
+      - adsb_tracker/**
       - .github/workflows/build.yaml
   workflow_dispatch:
 
 permissions:
   contents: read
-  packages: write
-  # Lets Cosign get a short-lived certificate from GitHub's identity for signing.
-  id-token: write
 
 jobs:
+  changes:
+    name: Changed apps
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.pick.outputs.matrix }}
+      any: ${{ steps.pick.outputs.any }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Pick apps to build
+        id: pick
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          all="ham_dashboard adsb_tracker"
+          if [ "$EVENT" = workflow_dispatch ]; then
+            changed="$all"
+          else
+            from=$([ "$EVENT" = pull_request ] && echo "$BASE" || echo "$BEFORE")
+            if [ -z "$from" ] || ! git cat-file -e "$from^{commit}" 2>/dev/null; then
+              files=$(git ls-files)   # first push of a branch: build everything
+            else
+              files=$(git diff --name-only "$from" HEAD)
+            fi
+            # A workflow change test-builds every app on a pull request, but on
+            # main only republishes apps whose own folder changed.
+            if [ "$EVENT" = pull_request ] && grep -q '^\.github/workflows/build\.yaml$' <<< "$files"; then changed="$all"; else
+              changed=$(for a in $all; do grep -q "^$a/" <<< "$files" && echo "$a"; done | xargs)
+            fi
+          fi
+          echo "Apps to build: ${changed:-none}"
+          rows=""
+          for app in $changed; do
+            image=${app//_/-}
+            name=$(sed -n 's/^name: *//p' "$app/config.yaml" | head -1)
+            for arch in amd64 aarch64; do
+              if [ $arch = amd64 ]; then runner=ubuntu-24.04; platform=linux/amd64; else runner=ubuntu-24.04-arm; platform=linux/arm64; fi
+              rows="$rows{\"app\":\"$app\",\"image\":\"$image\",\"name\":\"$name\",\"arch\":\"$arch\",\"runner\":\"$runner\",\"platform\":\"$platform\"},"
+            done
+          done
+          echo "matrix={\"include\":[${rows%,}]}" >> "$GITHUB_OUTPUT"
+          [ -n "$changed" ] && echo "any=true" >> "$GITHUB_OUTPUT" || echo "any=false" >> "$GITHUB_OUTPUT"
+
   build:
-    name: ${{ matrix.arch }}
+    name: ${{ matrix.app }} ${{ matrix.arch }}
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
     runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write
+      # Lets Cosign get a short-lived certificate from GitHub's identity for signing.
+      id-token: write
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - arch: amd64
-            runner: ubuntu-24.04
-            platform: linux/amd64
-          - arch: aarch64
-            runner: ubuntu-24.04-arm
-            platform: linux/arm64
+      matrix: ${{ fromJSON(needs.changes.outputs.matrix) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Read version
         id: info
+        env:
+          APP: ${{ matrix.app }}
+          IMAGE_NAME: ${{ matrix.image }}
         run: |
-          version=$(sed -n 's/^version: *"\{0,1\}\([^"]*\)"\{0,1\} *$/\1/p' ham_dashboard/config.yaml)
+          version=$(sed -n 's/^version: *"\{0,1\}\([^"]*\)"\{0,1\} *$/\1/p' "$APP/config.yaml")
           test -n "$version"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/ham-dashboard-${{ matrix.arch }}" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${IMAGE_NAME}-${{ matrix.arch }}" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
@@ -64,13 +114,13 @@ jobs:
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         id: build
         with:
-          context: ham_dashboard
+          context: ${{ matrix.app }}
           platforms: ${{ matrix.platform }}
           push: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
           build-args: BUILD_VERSION=${{ steps.info.outputs.version }}
           labels: |
             io.hass.type=addon
-            io.hass.name=Ham Radio Dashboard
+            io.hass.name=${{ matrix.name }}
             io.hass.version=${{ steps.info.outputs.version }}
             io.hass.arch=${{ matrix.arch }}
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
@@ -78,8 +128,8 @@ jobs:
           tags: |
             ${{ steps.info.outputs.image }}:${{ steps.info.outputs.version }}
             ${{ steps.info.outputs.image }}:latest
-          cache-from: type=gha,scope=${{ matrix.arch }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
+          cache-from: type=gha,scope=${{ matrix.app }}-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}-${{ matrix.arch }}
 
       - name: Install Cosign
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

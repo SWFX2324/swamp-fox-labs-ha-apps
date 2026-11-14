@@ -1,8 +1,11 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Documentation
+  - name: Ham Radio Dashboard documentation
     url: https://github.com/SWFX2324/swamp-fox-labs-ha-apps/blob/main/ham_dashboard/DOCS.md
     about: Setup, every tab, Home Assistant sensors and example automations.
+  - name: ADS-B Tracker documentation
+    url: https://github.com/SWFX2324/swamp-fox-labs-ha-apps/blob/main/adsb_tracker/DOCS.md
+    about: Finding a flight, how tracking works, request limits and moving from the custom integration.
   - name: Report a security vulnerability
     url: https://github.com/SWFX2324/swamp-fox-labs-ha-apps/security/advisories/new
     about: Report it privately here instead of opening a public issue.

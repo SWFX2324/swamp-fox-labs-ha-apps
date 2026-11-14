@@ -1,6 +1,6 @@
-# Checks every push and pull request: Home Assistant's app linter on
-# config.yaml, that the AppArmor profile parses, a syntax check of every
-# script, the unit and end-to-end tests, the blueprints, and the built image
+# Checks every push and pull request: Home Assistant's app linter on each
+# config.yaml, that each AppArmor profile parses, a syntax check of every
+# script, the unit and end-to-end tests, the blueprints, and each built image
 # running under its enforced AppArmor profile.
 name: Checks
 
@@ -13,19 +13,23 @@ permissions:
 
 jobs:
   lint:
-    name: App linter
+    name: App linter (${{ matrix.app }})
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [ham_dashboard, adsb_tracker]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: frenck/action-app-linter@b9cfd1bc62ba60d2c4fc96317b5f7ada5923f4a7 # v2.21.1
         with:
-          path: ./ham_dashboard
+          path: ./${{ matrix.app }}
       # Home Assistant refuses to install an app whose profile doesn't parse.
       # This only parses it (-Q: not loaded into the runner's kernel).
       - name: AppArmor profile parses
         run: |
           sudo apt-get install -y -qq apparmor > /dev/null
-          sudo apparmor_parser -Q -K -T ham_dashboard/apparmor.txt
+          sudo apparmor_parser -Q -K -T ${{ matrix.app }}/apparmor.txt
           echo "apparmor.txt parses"
 
   test:
@@ -37,16 +41,18 @@ jobs:
         with:
           node-version: 24
       - name: Syntax check
-        run: for f in $(find ham_dashboard/app -name '*.js' -not -path '*/lib/*'); do node --check "$f" || exit 1; done
-      - name: Unit and end-to-end tests
+        run: for f in $(find ham_dashboard/app adsb_tracker/app adsb_tracker/tests -name '*.js' -not -path '*/lib/*'); do node --check "$f" || exit 1; done
+      - name: Ham Radio Dashboard tests
         run: node --test "ham_dashboard/tests/*.test.js"
+      - name: ADS-B Tracker tests
+        run: node --test "adsb_tracker/tests/*.test.js"
       - name: Blueprints
         run: |
           python3 -c "import yaml" 2>/dev/null || pip install --quiet pyyaml
           python3 .github/scripts/check_blueprints.py
 
   apparmor:
-    name: Image under AppArmor
+    name: Image under AppArmor (ham_dashboard)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -59,3 +65,17 @@ jobs:
           sudo apparmor_parser -r -W ham_dashboard/apparmor.txt
       - name: Run the image and call every endpoint
         run: bash .github/scripts/apparmor_smoke.sh
+
+  apparmor-adsb:
+    name: Image under AppArmor (adsb_tracker)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build the image
+        run: docker build --quiet -t adsb-tracker:ci --build-arg BUILD_VERSION=ci adsb_tracker
+      - name: Load the AppArmor profile
+        run: |
+          sudo apt-get install -y -qq apparmor > /dev/null
+          sudo apparmor_parser -r -W adsb_tracker/apparmor.txt
+      - name: Run the image and call every endpoint
+        run: bash .github/scripts/apparmor_smoke_adsb.sh

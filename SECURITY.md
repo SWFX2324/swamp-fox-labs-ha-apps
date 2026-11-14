@@ -9,6 +9,8 @@ as soon as it's published, so the fix for a problem is to update.
 | --- | --- |
 | Ham Radio Dashboard, latest release | Yes |
 | Ham Radio Dashboard, older releases | No |
+| ADS-B Tracker, latest release | Yes |
+| ADS-B Tracker, older releases | No |
 
 ## Reporting a vulnerability
 
@@ -26,6 +28,9 @@ crediting you unless you'd rather not be named.
   the admin-only check on setup and saved paths, reading or writing outside the
   app's storage, or the app trusting requests that don't come through Home
   Assistant's ingress.
+- The ADS-B Tracker's server and page (`adsb_tracker/app`): for example making
+  it fetch anything other than its fixed adsb.fi paths, or reaching it other than
+  through ingress.
 - The image and how it's built: the AppArmor profile, the Dockerfile, the GitHub
   Actions workflows and image signing.
 

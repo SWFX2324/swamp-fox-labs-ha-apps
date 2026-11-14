@@ -25,6 +25,7 @@ ready image instead of building one on your machine.
 | | App | Description |
 | --- | --- | --- |
 | <img src="ham_dashboard/icon.png" width="40"> | [Ham Radio Dashboard](ham_dashboard) | Point-to-point HF propagation to anywhere (now and the next 24 hours, checked against PSKReporter), HF band conditions (160–10 m), NOAA R/S/G scales, SFI, sunspots, K/A index, gray line and MUF maps, DX cluster spots, PSKReporter and NOAA alerts, plus nearby repeaters, live APRS, POTA spots, satellite passes, QRZ/FCC callsign lookup, measured band activity, 6 m and 2 m openings, NCDXF beacon schedule, a band plan and GMRS/FRS/CB reference, storm safety, and Home Assistant sensors and alerts. |
+| <img src="adsb_tracker/icon.png" width="40"> | [ADS-B Tracker](adsb_tracker) | Find a flight by its ticket number, callsign, registration or ICAO hex and follow it anywhere in the world on a live map, from public adsb.fi data with no receiver or account. Altitude, speed, climb rate, emergency squawks and the observed trail; tracking stops by itself when the flight lands or the aircraft starts its next trip. |
 
 <p>
   <img src="docs/screenshot-weather.png" alt="Space weather view: solar conditions, storm safety, NOAA scales and HF band conditions" width="66%">
@@ -58,14 +59,31 @@ responses in `ham_dashboard/tests/fixtures`, so they run offline.
 Home Assistant blueprints for the dashboard's events live in
 [`blueprints/automation`](blueprints/automation); the docs link each one for import.
 
+The ADS-B Tracker is also plain Node.js with no dependencies. To preview it with a
+synthetic flight (Raleigh to Los Angeles) behind a stand-in for Home Assistant's
+ingress proxy, so nothing touches the real feed:
+
+```bash
+node adsb_tracker/tests/dev.js
+```
+
+Then open http://localhost:8098/api/hassio_ingress/Zx9_test-token/. Its tests use a
+fake adsb.fi and a fake clock:
+
+```bash
+node --test "adsb_tracker/tests/*.test.js"
+```
+
 ### Releases
 
-Every push to `main` that touches `ham_dashboard/` runs two GitHub Actions:
+Every push to `main` that touches an app's folder runs two GitHub Actions:
 
 - **Checks** (on every push and pull request): Home Assistant's app linter, a syntax
-  check of every script, the unit and end-to-end tests, and a check of the blueprints.
-- **Build images**: builds `ghcr.io/swfx2324/ham-dashboard-amd64` and
-  `ham-dashboard-aarch64`, tagged with the version in `config.yaml` and `latest`.
+  check of every script, the unit and end-to-end tests, a check of the blueprints,
+  and each image run under its enforced AppArmor profile.
+- **Build images**: builds `ghcr.io/swfx2324/<app>-amd64` and `<app>-aarch64`
+  (`ham-dashboard`, `adsb-tracker`) for each app that changed, tagged with the
+  version in its `config.yaml` and `latest`.
   Pull requests and other branches only build, so a released version's image is
   never replaced by unreleased code.
 

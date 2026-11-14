@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ADS-B Tracker</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="lib/leaflet/leaflet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-banner" id="offline" role="alert" hidden>Can’t reach the ADS-B Tracker app. It may be restarting; retrying…</div>
+
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>
+      <div>
+        <h1>ADS-B Tracker</h1>
+        <p class="subtitle">Follow any flight worldwide · public data, no receiver needed</p>
+      </div>
+    </div>
+    <span id="feed" class="badge" data-state="off" role="status">Map only</span>
+    <button id="pause" type="button" class="ghost">Pause</button>
+    <button id="theme" type="button" class="ghost icon" aria-label="Appearance: automatic" title="Appearance: automatic">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20m0 18V4a8 8 0 0 1 0 16"/></svg>
+    </button>
+  </header>
+
+  <form id="search" class="search" autocomplete="off">
+    <label class="visually-hidden" for="kind">Search by</label>
+    <select id="kind">
+      <option value="flight">Flight number</option>
+      <option value="callsign">Callsign</option>
+      <option value="registration">Registration</option>
+      <option value="hex">ICAO hex</option>
+    </select>
+    <label class="visually-hidden" for="query">Flight to find</label>
+    <input id="query" type="search" placeholder="e.g. AA1920 or DL789" maxlength="12" spellcheck="false" autocapitalize="characters" enterkeyhint="search" required>
+    <button type="submit" class="primary">Find &amp; track</button>
+  </form>
+  <div id="status" class="status" role="status" aria-live="polite"></div>
+
+  <main class="workspace">
+    <section class="mapcard" aria-label="Live air traffic map">
+      <div class="maptools">
+        <span id="region" class="region">Lower 48 · map only</span>
+        <div class="seg" role="group" aria-label="Map view">
+          <button type="button" data-preset="conus" aria-label="Lower 48"><span class="long">Lower 48</span><span class="short">US</span></button>
+          <button type="button" data-preset="alaska" aria-label="Alaska"><span class="long">Alaska</span><span class="short">AK</span></button>
+          <button type="button" data-preset="hawaii" aria-label="Hawaii"><span class="long">Hawaii</span><span class="short">HI</span></button>
+        </div>
+        <div class="scan">
+          <label class="visually-hidden" for="radius">Scan radius</label>
+          <select id="radius">
+            <option value="25">25 NM</option>
+            <option value="50">50 NM</option>
+            <option value="100" selected>100 NM</option>
+            <option value="250">250 NM</option>
+          </select>
+          <button id="scan" type="button"><span class="long">Scan map here</span><span class="short">Scan here</span></button>
+        </div>
+      </div>
+      <div class="mapwrap">
+        <div id="map" class="map" aria-label="Aircraft positions"></div>
+        <button id="recenter" type="button" class="floating" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8m8.94 3A9 9 0 0 0 13 3.06V1h-2v2.06A9 9 0 0 0 3.06 11H1v2h2.06A9 9 0 0 0 11 20.94V23h2v-2.06A9 9 0 0 0 20.94 13H23v-2zM12 19a7 7 0 1 1 0-14 7 7 0 0 1 0 14"/></svg>
+          Follow flight
+        </button>
+        <div class="legend" aria-label="Legend">
+          <span><i style="--c:var(--alt-low)"></i>Below 10,000 ft</span>
+          <span><i style="--c:var(--alt-mid)"></i>10–30,000 ft</span>
+          <span><i style="--c:var(--alt-high)"></i>Above 30,000 ft</span>
+          <span><i style="--c:var(--tracked)"></i>Selected · observed trail</span>
+        </div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <section class="card flight" id="flight" aria-labelledby="flightTitle">
+        <h2 id="flightTitle" class="card-label">Selected flight</h2>
+        <div id="details"></div>
+        <div class="toggles">
+          <button id="follow" type="button" class="toggle" aria-pressed="false">Follow</button>
+          <button id="isolate" type="button" class="toggle" aria-pressed="false">Isolate</button>
+        </div>
+        <div class="actions">
+          <button id="track" type="button" class="primary" hidden>Track this flight</button>
+          <button id="stop" type="button" class="danger" hidden>Stop tracking</button>
+        </div>
+      </section>
+
+      <section class="card list" aria-labelledby="listTitle">
+        <div class="card-head">
+          <h2 id="listTitle" class="card-label">Aircraft</h2>
+          <span id="counts" class="muted"></span>
+        </div>
+        <label class="visually-hidden" for="filter">Filter aircraft</label>
+        <input id="filter" type="search" placeholder="Filter callsign, registration, type…" disabled>
+        <div class="scroll">
+          <table>
+            <thead><tr><th scope="col">Flight</th><th scope="col">Type</th><th scope="col" class="num">Alt ft</th><th scope="col" class="num">Kt</th><th scope="col" class="num">Age</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+          <p id="empty" class="empty"></p>
+        </div>
+      </section>
+
+      <details class="card help" id="help">
+        <summary>How tracking works</summary>
+        <ul>
+          <li>Search by <b>flight number</b> (AA1920), <b>callsign</b> (AAL1920), <b>registration</b> (N195UW) or <b>ICAO hex</b> (A17C95). Ticket numbers for most US airlines are converted for you.</li>
+          <li>One match is tracked automatically: shown alone and followed, anywhere in the world.</li>
+          <li>Updates every 15 s zoomed in, or every 60 s zoomed out or while on the ground. The map by itself requests no aircraft data.</li>
+          <li>Tracking ends by itself when the flight lands, when the aircraft starts a different flight, or after 2 hours with no signal. It’s saved in this browser for up to 12 hours.</li>
+          <li>Only positions actually received are shown: no schedules, routes or arrival times. Coverage thins out over oceans and remote areas.</li>
+          <li>Codeshare? Use the operating airline’s flight number. Regional flights often broadcast as SKW, RPA, ENY or EDV.</li>
+        </ul>
+      </details>
+    </aside>
+  </main>
+
+  <footer>
+    Aircraft data © <a href="https://adsb.fi" target="_blank" rel="noopener noreferrer">adsb.fi</a>, personal non-commercial use ·
+    Map © <a href="https://www.esri.com/" target="_blank" rel="noopener noreferrer">Esri</a> and contributors ·
+    <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a> ·
+    Positions may be delayed
+  </footer>
+
+  <script src="lib/leaflet/leaflet.js"></script>
+  <script src="tracker.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

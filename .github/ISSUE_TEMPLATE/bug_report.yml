@@ -1,7 +1,16 @@
 name: Bug report
-description: Something in Ham Radio Dashboard is broken or wrong.
+description: Something in one of the apps is broken or wrong.
 labels: [bug]
 body:
+  - type: dropdown
+    id: app
+    attributes:
+      label: Which app?
+      options:
+        - Ham Radio Dashboard
+        - ADS-B Tracker
+    validations:
+      required: true
   - type: markdown
     attributes:
       value: |
@@ -26,21 +35,23 @@ body:
   - type: textarea
     id: status
     attributes:
-      label: Dashboard details
+      label: App details
       description: >-
-        In the dashboard, open settings (⚙ at the top right) → **Data sources and
-        connections** → **Copy details for a bug report**, and paste it here. It
-        includes the version and the status of each data source, but not your
-        callsign, and only a 4-character grid.
+        Ham Radio Dashboard: open settings (⚙ at the top right) → **Data sources
+        and connections** → **Copy details for a bug report**, and paste it here.
+        It includes the version and the status of each data source, but not your
+        callsign, and only a 4-character grid. ADS-B Tracker: the app version
+        (Settings → Apps → ADS-B Tracker) and the flight you searched, if you
+        don't mind sharing it.
       render: text
     validations:
-      required: true
+      required: false
   - type: textarea
     id: log
     attributes:
       label: App log
       description: >-
-        Settings → Apps → Ham Radio Dashboard → **Log** in Home Assistant. Paste the
+        Settings → Apps → (the app) → **Log** in Home Assistant. Paste the
         lines around the problem.
       render: text
   - type: input
