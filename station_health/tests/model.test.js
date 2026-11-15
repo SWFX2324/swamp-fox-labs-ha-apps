@@ -87,7 +87,7 @@ test('hosts: the Home Assistant machine from the Supervisor, with disk and uptim
 
 test('UniFi console: networks with their clients, traffic, busiest clients and new devices', () => {
   const api = {
-    health: [{ subsystem: 'wan', status: 'ok', 'rx_bytes-r': 23_000_000, 'tx_bytes-r': 2_750_000, isp_name: 'ISP' }, { subsystem: 'www', status: 'ok', latency: 18, uptime: 3600, xput_down: 900.4, xput_up: 40, speedtest_lastrun: NOW / 1000 - 3600 }],
+    health: [{ subsystem: 'wan', status: 'ok', gw_mac: 'gw', 'rx_bytes-r': 23_000_000, 'tx_bytes-r': 2_750_000, isp_name: 'ISP' }, { subsystem: 'www', status: 'ok', latency: 18, uptime: 3600, xput_down: 900.4, xput_up: 40, speedtest_lastrun: NOW / 1000 - 3600 }],
     networks: [
       { _id: 'n1', name: 'Default', purpose: 'corporate', ip_subnet: '10.0.1.1/24' },
       { _id: 'n2', name: 'IoT', purpose: 'corporate', vlan_enabled: true, vlan: '30', ip_subnet: '10.0.30.1/24' },
@@ -101,6 +101,7 @@ test('UniFi console: networks with their clients, traffic, busiest clients and n
     ],
     devices: [
       { mac: 'ap1', name: 'Hall AP', type: 'uap', state: 1, uptime: 7200, 'system-stats': { cpu: '12.5', mem: '40' }, num_sta: 2, upgradable: true, upgrade_to_firmware: '4.1', version: '4.0' },
+      { mac: 'mesh', name: 'Express AP', type: 'udm', model: 'UX', state: 0, last_seen: NOW / 1000 - 600 },
       { mac: 'gw', name: 'Router', type: 'udm', state: 0, last_seen: NOW / 1000 - 600, general_temperature: 50, total_used_power: 9.5, total_max_power: 46 },
     ],
   };
@@ -117,8 +118,12 @@ test('UniFi console: networks with their clients, traffic, busiest clients and n
   assert.equal(n.devices[0].level, 'bad', 'a gateway offline is bad');
   assert.equal(n.devices[0].temp, 122, '°C converted to the home\'s unit');
   assert.deepEqual(n.devices[0].poe, { usedW: 10, maxW: 46 });
-  assert.equal(n.devices[1].firmware.update, true);
-  assert.equal(n.devices[1].cpu, 13);
+  const mesh = n.devices.find(d => d.name === 'Express AP');
+  assert.equal(mesh.kind, 'ap', 'an Express that reports type udm but is not the WAN gateway is an access point');
+  assert.equal(mesh.level, 'warn', 'so it being offline is a warning, not an outage');
+  const office = n.devices.find(d => d.name === 'Hall AP');
+  assert.equal(office.firmware.update, true);
+  assert.equal(office.cpu, 13);
   assert.ok(!JSON.stringify(n).includes('wan_ip'), 'no WAN address');
 });
 

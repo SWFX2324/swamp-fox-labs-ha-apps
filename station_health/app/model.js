@@ -278,6 +278,7 @@ const rateOf = o => {
 function unifiFromApi(api, unit, now = Date.now()) {
   const health = api.health || [];
   const wanH = health.find(h => h.subsystem === 'wan') || null;
+  const gwMac = wanH?.gw_mac || null;
   const www = health.find(h => h.subsystem === 'www') || null;
 
   const wan = wanH || www ? {
@@ -327,7 +328,11 @@ function unifiFromApi(api, unit, now = Date.now()) {
   for (const n of newDevices) n.ap = n.ap ? apName.get(n.ap) || null : null;
 
   const devices = (api.devices || []).map(d => {
-    const kind = kindOf(d.type, d.model);
+    // A UniFi Express reports itself as a gateway (type udm) even when it's
+    // meshed in as an access point, so when the console names the WAN gateway,
+    // only that device is the gateway.
+    const typed = kindOf(d.type, d.model);
+    const kind = gwMac ? (d.mac === gwMac ? 'gateway' : typed === 'gateway' ? 'ap' : typed) : typed;
     const state = UNIFI_STATE[d.state] || (d.state === undefined ? null : 'unknown');
     const temps = (d.temperatures || []).map(t => num(t.value)).filter(v => v !== null);
     const tempC = num(d.general_temperature) ?? (temps.length ? Math.max(...temps) : null);

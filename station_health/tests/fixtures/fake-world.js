@@ -264,7 +264,7 @@ function unifiData(endpoint) {
   const now = Date.now() / 1000;
   switch (endpoint) {
     case 'stat/health': return [
-      { subsystem: 'wan', status: switches.has('wan_down') ? 'error' : 'ok', isp_name: 'Example Fiber', 'rx_bytes-r': bytesR(184), 'tx_bytes-r': bytesR(22), gw_name: 'Router' },
+      { subsystem: 'wan', status: switches.has('wan_down') ? 'error' : 'ok', isp_name: 'Example Fiber', gw_mac: '02:00:00:00:00:01', 'rx_bytes-r': bytesR(184), 'tx_bytes-r': bytesR(22), gw_name: 'Router' },
       { subsystem: 'www', status: switches.has('wan_down') ? 'error' : 'ok', latency: 18, drops: 0, uptime: 18 * 86400 + 6 * 3600, xput_down: 912.4, xput_up: 38.1, speedtest_ping: 11, speedtest_lastrun: Math.round(now - 8 * 3600) },
       { subsystem: 'wlan', status: 'ok', num_user: 33 },
     ];

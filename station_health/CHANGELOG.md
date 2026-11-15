@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.2
+
+- **A UniFi Express meshed in as an access point is listed as one.** Express units
+  report themselves as gateways, so one that went offline was shown as the gateway
+  being down, in red. The app now treats only the device the console names as the WAN
+  gateway as the gateway.
+
 ## 1.0.1
 
 - **The footer shows the real version** instead of "dev". Home Assistant's container
