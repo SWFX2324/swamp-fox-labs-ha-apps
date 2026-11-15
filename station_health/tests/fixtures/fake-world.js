@@ -20,7 +20,16 @@
 //   bare           a plain Home Assistant: no UniFi, NAS, PC or Portainer
 // FAKE_WORLD_LOG=1 logs each request.
 
-const switches = new Set(String(process.env.FAKE_WORLD || '').split(',').map(s => s.trim()).filter(Boolean));
+// In the container, s6-overlay starts the app with a cleaned environment, so
+// FAKE_WORLD may only be in s6's saved copy (as the Supervisor token is).
+function fakeWorldSetting() {
+  if (process.env.FAKE_WORLD !== undefined) return process.env.FAKE_WORLD;
+  for (const dir of ['/run/s6/container_environment', '/var/run/s6/container_environment']) {
+    try { return require('fs').readFileSync(`${dir}/FAKE_WORLD`, 'utf8').trim(); } catch { /* not there */ }
+  }
+  return '';
+}
+const switches = new Set(String(fakeWorldSetting()).split(',').map(s => s.trim()).filter(Boolean));
 const MIN = 60_000, HOUR = 60 * MIN, DAY = 24 * HOUR;
 const log = (...a) => { if (process.env.FAKE_WORLD_LOG) console.log('[fake]', ...a); };
 const iso = t => new Date(t).toISOString();
