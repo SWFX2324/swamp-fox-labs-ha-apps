@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.0
+
+- **Pick exactly where to scan.** Click or tap the map to drop a scan spot. A dashed
+  circle shows the exact area at the chosen radius and follows radius changes, so
+  there's no more lining up the map's center and guessing. Press **Scan this spot**
+  to scan it. Click the dot or press Esc to clear it. Without a spot, **Scan map
+  center** works as before, and hovering over it previews that circle.
+- **The Scan button uses the accent color**, so it stands out on the map toolbar.
+
 ## 1.2.0
 
 First release as a Home Assistant app. It replaces the ADS-B Tracker custom

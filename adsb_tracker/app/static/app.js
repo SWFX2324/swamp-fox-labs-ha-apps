@@ -58,6 +58,7 @@
   const markers = new Map();
   let lastPanned = null;
   let lastLocked = null;
+  let pick = null, centerPreview = false, pickRing = null, pickDot = null;   // the scan spot (see drawPick)
   let programmaticMove = false;
 
   const core = new TrackerCore({
@@ -86,6 +87,15 @@
     // Dragging the map means "let me look around": stop following.
     map.on('dragstart', () => { if (core.follow) { core.follow = false; schedule(); } });
     map.on('zoomend', () => { schedule(); core.refresh(); });
+    // Click (or tap) the map to choose exactly where a scan will be centred.
+    map.on('click', e => {
+      if (!canScan()) return;
+      pick = e.latlng.wrap();
+      drawPick();
+      schedule();
+    });
+    // While nothing is picked, hovering Scan shows where the map-centre scan will land.
+    map.on('move', () => { if (centerPreview) drawPick(); });
     new ResizeObserver(() => map.invalidateSize()).observe($('map'));
   } catch (e) {
     console.error(e);
@@ -109,12 +119,46 @@
   $('stop').onclick = () => { core.stop(); $('query').value = ''; goPreset(preset); };
   $('filter').oninput = () => schedule();
   $('scan').onclick = () => {
-    if (!map) return;
-    const c = map.getCenter();
+    if (!map || !canScan()) return;
+    const c = pick || map.getCenter();
     $('filter').value = '';
+    clearPick();
     core.scanArea({ latitude: c.lat, longitude: c.lng, radius: Number($('radius').value) });
     moveMap(() => map.fitBounds(L.latLng(core.area.latitude, core.area.longitude).toBounds(core.area.radius * 1852 * 2), { maxZoom: 9 }));
   };
+  $('radius').onchange = () => { drawPick(); schedule(); };
+  for (const ev of ['mouseenter', 'focus']) $('scan').addEventListener(ev, () => { if (!pick && canScan()) { centerPreview = true; drawPick(); } });
+  for (const ev of ['mouseleave', 'blur']) $('scan').addEventListener(ev, () => { if (centerPreview) { centerPreview = false; drawPick(); } });
+
+  // ---- scan spot ------------------------------------------------------------------
+  // A picked spot shows the exact circle the next scan will cover: a dashed
+  // ring at the chosen radius and a dot at its centre. Clicking the dot or
+  // pressing Esc clears it; scanning uses it and clears it.
+  function canScan() { return !!map && core.mode !== 'tracking'; }
+  function clearPick() { pick = null; centerPreview = false; drawPick(); }
+  function drawPick() {
+    if (!map) return;
+    const at = pick || (centerPreview ? map.getCenter() : null);
+    if (!at || !canScan()) {
+      pickRing?.remove(); pickDot?.remove();
+      map.getContainer().classList.toggle('pickable', canScan());
+      return;
+    }
+    const color = cssVar('--accent');
+    const radius = Number($('radius').value) * 1852;
+    if (!pickRing) {
+      pickRing = L.circle(at, { radius, color, weight: 2, dashArray: '6 6', fillColor: color, fillOpacity: 0.08, interactive: false });
+      pickDot = L.circleMarker(at, { radius: 6, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1 });
+      pickDot.bindTooltip('Scan center · click to clear', { direction: 'top', offset: [0, -6] });
+      pickDot.on('click', e => { L.DomEvent.stop(e); clearPick(); schedule(); });
+    }
+    pickRing.setLatLng(at).setRadius(radius).setStyle({ color, fillColor: color });
+    pickDot.setLatLng(at).setStyle({ fillColor: color });
+    if (!map.hasLayer(pickRing)) pickRing.addTo(map);
+    if (pick && !map.hasLayer(pickDot)) pickDot.addTo(map);
+    if (!pick && map.hasLayer(pickDot)) pickDot.remove();
+    map.getContainer().classList.add('pickable');
+  }
   for (const b of document.querySelectorAll('[data-preset]')) b.onclick = () => goPreset(b.dataset.preset);
   function goPreset(name) {
     preset = name;
@@ -124,6 +168,7 @@
   document.addEventListener('visibilitychange', () => { if (!document.hidden) core.refresh(); });
   document.addEventListener('keydown', e => {
     if (e.key === '/' && document.activeElement?.tagName !== 'INPUT') { e.preventDefault(); $('query').focus(); }
+    if (e.key === 'Escape' && pick) { clearPick(); schedule(); }
   });
 
   // ---- drawing ------------------------------------------------------------------
@@ -334,7 +379,7 @@
     $('filter').disabled = core.aircraft.length < 2;
     rows.closest('table').hidden = !list.length;
     const empty = $('empty');
-    empty.textContent = list.length ? '' : core.mode === 'idle' ? 'No aircraft loaded. Search a flight, or zoom in and use Scan map here.'
+    empty.textContent = list.length ? '' : core.mode === 'idle' ? 'No aircraft loaded. Search a flight, or click a spot on the map and press Scan.'
       : core.aircraft.length ? 'Nothing matches the filter.' : core.mode === 'ended' ? 'Not polling.' : core.last ? 'No aircraft right now.' : 'Waiting for data…';
   }
 
@@ -348,14 +393,22 @@
     $('status').dataset.tone = st.tone;
     if ($('status').textContent !== st.text) $('status').textContent = st.text;
     const every = core.pollIntervalMs() / 1000;
+    if (core.mode === 'tracking' && pick) clearPick();
+    else drawPick();
+    const hint = canScan() ? ' · click the map to pick a scan spot' : '';
     $('region').textContent =
-      core.mode === 'tracking' ? `Tracking ${core.label} · worldwide · every ${every}s`
-        : core.mode === 'lookup' ? `Searching for ${core.label} · every ${every}s`
-          : core.mode === 'area' ? `Scan · ${core.area.radius} NM around ${core.area.latitude.toFixed(2)}, ${core.area.longitude.toFixed(2)} · every ${every}s`
-            : core.mode === 'ended' ? `${core.ended?.callsign || 'Flight'} · tracking ended`
-              : `${PRESET_NAMES[preset]} · map only, no aircraft requests`;
-    $('scan').disabled = core.mode === 'tracking' || !map;
-    $('scan').title = core.mode === 'tracking' ? 'Stop tracking first to scan an area' : 'Load the aircraft around the map’s centre';
+      pick ? `Scan spot ${pick.lat.toFixed(2)}, ${pick.lng.toFixed(2)} · ${$('radius').value} NM · press Scan`
+        : core.mode === 'tracking' ? `Tracking ${core.label} · worldwide · every ${every}s`
+          : core.mode === 'lookup' ? `Searching for ${core.label} · every ${every}s`
+            : core.mode === 'area' ? `Scan · ${core.area.radius} NM around ${core.area.latitude.toFixed(2)}, ${core.area.longitude.toFixed(2)} · every ${every}s${hint}`
+              : core.mode === 'ended' ? `${core.ended?.callsign || 'Flight'} · tracking ended${hint}`
+                : `${PRESET_NAMES[preset]} · map only${hint}`;
+    $('scan').disabled = !canScan();
+    $('scan').title = core.mode === 'tracking' ? 'Stop tracking first to scan an area'
+      : pick ? 'Load the aircraft inside the dashed circle' : 'Load the aircraft around the map’s center (or click the map first to pick a spot)';
+    const [long, short] = $('scan').children;
+    const longText = pick ? 'Scan this spot' : 'Scan map center', shortText = pick ? 'Scan spot' : 'Scan center';
+    if (long.textContent !== longText) { long.textContent = longText; short.textContent = shortText; }
     $('recenter').hidden = !(core.mode === 'tracking' && !core.follow && core.selected && hasPosition(core.selected));
     document.title = core.mode === 'tracking' ? `${core.label} · ADS-B Tracker` : 'ADS-B Tracker';
   }

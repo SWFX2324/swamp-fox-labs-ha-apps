@@ -105,10 +105,18 @@ number doesn't stop it.
 
 ## Looking around an area
 
-Pan and zoom the map, choose a radius (25–250 NM) and press **Scan map here** to load
-every aircraft around the map's centre. Pick one on the map or in the list and press
-**Track this flight** to follow it anywhere. Scanning is turned off while a flight is
-tracked, so the two don't compete for the feed.
+1. **Click (or tap) the spot** you want to scan. A dot marks the center and a dashed
+   circle shows exactly the area that will be scanned.
+2. Choose a radius (25–250 NM). The circle updates as you change it.
+3. Press **Scan this spot** to load every aircraft inside the circle.
+
+Click somewhere else to move the spot, or click the dot (or press Esc) to clear it.
+Without a spot, the button reads **Scan map center** and scans around the middle of
+the map; hovering over it previews that circle.
+
+Pick an aircraft on the map or in the list and press **Track this flight** to follow
+it anywhere. Scanning is turned off while a flight is tracked, so the two don't
+compete for the feed.
 
 **Lower 48**, **Alaska** and **Hawaii** jump the map to those areas. They never load
 aircraft, and they don't stop a tracked flight.

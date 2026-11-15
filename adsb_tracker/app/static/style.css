@@ -147,6 +147,10 @@ button svg { width: 18px; height: 18px; display: block; }
 .mapwrap { position: relative; flex: 1; min-height: 320px; }
 .map { position: absolute; inset: 0; background: var(--card-2); z-index: 0; }
 .leaflet-tile-pane { filter: var(--tiles); }
+/* Clicking the map picks a scan spot, so say so with the cursor. */
+.leaflet-container.pickable.leaflet-grab { cursor: crosshair; }
+.leaflet-container.pickable.leaflet-dragging .leaflet-grab { cursor: move; }
+.leaflet-interactive.leaflet-interactive { cursor: pointer; }
 .leaflet-container { font: inherit; background: var(--card-2); }
 .leaflet-control-attribution { font-size: 10px; }
 .leaflet-bar a { background: var(--card); color: var(--text); border-color: var(--border); }
