@@ -144,6 +144,8 @@ button svg { width: 18px; height: 18px; display: block; }
 .seg button:hover:not(:disabled) { background: var(--accent-soft); }
 .scan { display: inline-flex; gap: 6px; }
 .scan select, .scan button { min-height: 36px; padding: 6px 10px; font-size: 13px; }
+.scan .reset { display: inline-flex; align-items: center; gap: 5px; background: transparent; }
+.scan .reset svg { width: 16px; height: 16px; }
 .mapwrap { position: relative; flex: 1; min-height: 320px; }
 .map { position: absolute; inset: 0; background: var(--card-2); z-index: 0; }
 .leaflet-tile-pane { filter: var(--tiles); }

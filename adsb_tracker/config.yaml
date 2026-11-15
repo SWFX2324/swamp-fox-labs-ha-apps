@@ -1,5 +1,5 @@
 name: ADS-B Tracker
-version: "1.3.1"
+version: "1.4.0"
 slug: adsb_tracker
 description: Find a flight by number and follow it anywhere in the world, from public ADS-B data. No receiver or account needed.
 url: https://github.com/SWFX2324/swamp-fox-labs-ha-apps/tree/main/adsb_tracker

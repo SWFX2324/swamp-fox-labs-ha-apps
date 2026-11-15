@@ -121,6 +121,11 @@ compete for the feed.
 **Lower 48**, **Alaska** and **Hawaii** jump the map to those areas. They never load
 aircraft, and they don't stop a tracked flight.
 
+**Reset map** (the ↺ arrow on a phone) puts the map back the way the page opens: the
+Lower 48, with the scanned area, scan spot, selected aircraft and list filter
+cleared, and no aircraft requests. A tracked flight keeps being tracked; use **Stop
+tracking** to end it.
+
 The **Aircraft** list's filter box narrows loaded aircraft by callsign, registration,
 type or ICAO code.
 

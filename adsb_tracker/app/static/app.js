@@ -165,6 +165,15 @@
     core.overview();
     if (map) moveMap(() => map.fitBounds(PRESETS[name]));
   }
+  // Back to how the page opens: the Lower 48 with no scan, scan spot, selection
+  // or filter. A tracked flight is kept (Stop tracking ends it); the map just
+  // stops following it.
+  $('reset').onclick = () => {
+    clearPick();
+    $('filter').value = '';
+    lastPanned = null;
+    goPreset('conus');
+  };
   document.addEventListener('visibilitychange', () => { if (!document.hidden) core.refresh(); });
   document.addEventListener('keydown', e => {
     if (e.key === '/' && document.activeElement?.tagName !== 'INPUT') { e.preventDefault(); $('query').focus(); }

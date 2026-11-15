@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.0
+
+- **Reset map** button next to Scan map (an arrow icon on a phone). It clears the
+  scanned area, the scan spot, the selected aircraft and the list filter, and goes
+  back to the Lower 48 view the page opens with. A tracked flight keeps being
+  tracked: use **Stop tracking** to end it.
+
 ## 1.3.1
 
 - The Scan button reads **Scan map** when no spot is picked (it was "Scan map
