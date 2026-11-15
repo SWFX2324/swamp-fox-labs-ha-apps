@@ -17,8 +17,8 @@ homeassistant_api: true
 hassio_api: true
 panel_icon: mdi:heart-pulse
 panel_title: Station Health
-# Network clients, addresses and host details: administrators only.
-panel_admin: true
+# panel_admin is left at its default (true): network clients, addresses and
+# host details are for administrators only.
 options:
   unifi_host: ""
   unifi_username: ""

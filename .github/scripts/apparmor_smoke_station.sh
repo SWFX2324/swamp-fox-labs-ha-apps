@@ -50,7 +50,9 @@ for k in states registry supervisor history unifi; do
   echo "$k: error=$err"
   [[ "$err" == null ]] || fail "$k didn't load: $err"
 done
-jq -e '.containers.total == 11 and (.network.vlans | length) == 3 and .summary.level == "warn"' <<< "$state" > /dev/null || fail "the snapshot isn't what the fake world holds"
+got=$(jq -c '{containers: .containers.total, vlans: (.network.vlans | length), level: .summary.level, needs: [.summary.needs[].text]}' <<< "$state")
+echo "snapshot: $got"
+jq -e '.containers.total == 11 and (.network.vlans | length) == 3 and .summary.level == "warn"' <<< "$state" > /dev/null || fail "the snapshot isn't what the fake world holds: $got"
 
 code=$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{}' "$BASE/api/refresh")
 echo "$code POST api/refresh"
