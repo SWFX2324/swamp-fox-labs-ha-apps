@@ -33,6 +33,7 @@ instead of building one on your machine.
 | <img src="ham_dashboard/icon.png" width="40"> | [Ham Radio Dashboard](ham_dashboard) | HF propagation, band conditions and space weather for amateur radio, plus DX spots, repeaters, APRS, POTA, satellites and callsign lookup. |
 | <img src="adsb_tracker/icon.png" width="40"> | [ADS-B Tracker](adsb_tracker) | Find a flight by its number and follow it anywhere in the world on a live map, from public ADS-B data. |
 | <img src="weather_observatory/icon.png" width="40"> | [Weather Observatory](weather_observatory) | Your Home Assistant weather as a full-page station, with radar, NWS alerts, a nearby station and air quality. |
+| <img src="station_health/icon.png" width="40"> | [Station Health](station_health) | One view-only page for your hosts, containers, UniFi network and VLANs, backups and updates, with uptime and what happened. |
 
 Each app's page has screenshots and an overview, and its **Documentation**
 (`DOCS.md`, also on the app's **Documentation** tab in Home Assistant) covers setup,
@@ -64,6 +65,7 @@ Each app's README says how to run it locally. All tests run with Node.js 24:
 node --test "ham_dashboard/tests/*.test.js"
 node --test "adsb_tracker/tests/*.test.js"
 node --test "weather_observatory/tests/*.test.js"
+node --test "station_health/tests/*.test.js"
 ```
 
 ### Releases

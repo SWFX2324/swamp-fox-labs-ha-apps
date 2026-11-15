@@ -1,0 +1,33 @@
+name: Station Health
+version: "1.0.0"
+slug: station_health
+description: One view-only page for your hosts, containers, UniFi network and VLANs, backups and updates, with uptime and what happened
+url: https://github.com/SWFX2324/swamp-fox-labs-ha-apps/tree/main/station_health
+image: ghcr.io/swfx2324/station-health-{arch}
+arch:
+  - aarch64
+  - amd64
+init: false
+ingress: true
+# Reads states, the entity, device and config entry registries and Recorder
+# history over the Core WebSocket API. It never calls a service.
+homeassistant_api: true
+# Reads the Supervisor's /info endpoints (host uptime and disk, versions),
+# which the default role allows. Nothing else.
+hassio_api: true
+panel_icon: mdi:heart-pulse
+panel_title: Station Health
+# Network clients, addresses and host details: administrators only.
+panel_admin: true
+options:
+  unifi_host: ""
+  unifi_username: ""
+  unifi_password: ""
+  unifi_site: default
+  unifi_verify_ssl: false
+schema:
+  unifi_host: "str?"
+  unifi_username: "str?"
+  unifi_password: "password?"
+  unifi_site: "match(^[A-Za-z0-9_-]{1,64}$)"
+  unifi_verify_ssl: bool

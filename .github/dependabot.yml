@@ -34,3 +34,10 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
+
+  - package-ecosystem: docker
+    directory: /station_health
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7

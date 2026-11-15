@@ -9,6 +9,8 @@ body:
       options:
         - Ham Radio Dashboard
         - ADS-B Tracker
+        - Weather Observatory
+        - Station Health
     validations:
       required: true
   - type: markdown
@@ -42,7 +44,8 @@ body:
         It includes the version and the status of each data source, but not your
         callsign, and only a 4-character grid. ADS-B Tracker: the app version
         (Settings → Apps → ADS-B Tracker) and the flight you searched, if you
-        don't mind sharing it.
+        don't mind sharing it. Station Health: the app version and the panel
+        that's wrong; leave out device, network and client names and addresses.
       render: text
     validations:
       required: false

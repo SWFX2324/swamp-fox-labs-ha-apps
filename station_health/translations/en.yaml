@@ -1,0 +1,16 @@
+configuration:
+  unifi_host:
+    name: UniFi console address
+    description: Optional. The IP address or host name of your UniFi console or UniFi Network server, for example 192.168.1.1 (add :8443 for a self-hosted server). Adds each network (VLAN) with its clients and traffic, and the internet connection. Leave empty to use only Home Assistant's UniFi integration.
+  unifi_username:
+    name: UniFi username
+    description: A local UniFi account (not a Ubiquiti cloud account). A View Only account is enough and is recommended.
+  unifi_password:
+    name: UniFi password
+    description: The local account's password. It stays in the app and is never shown on the page.
+  unifi_site:
+    name: UniFi site
+    description: The site ID. "default" unless you have more than one site.
+  unifi_verify_ssl:
+    name: Verify SSL certificate
+    description: Off for a console with its own self-signed certificate (the usual case on a home network). Turn it on if the console has a trusted certificate.

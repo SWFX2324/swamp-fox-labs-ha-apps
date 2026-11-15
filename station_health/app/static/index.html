@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Station Health</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-banner" id="offline" role="alert" hidden>Can’t reach the Station Health app. It may be restarting; retrying…</div>
+
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+      <h1>Station Health</h1>
+    </div>
+    <span class="viewonly" title="Nothing on this page can start, stop, restart or change anything.">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span>View only</span>
+    </span>
+    <span class="spacer"></span>
+    <span class="meta mono" id="updated" role="status">Connecting…</span>
+    <button id="refresh" type="button" class="ghost" aria-label="Refresh now">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.65 6.35A8 8 0 1 0 19.73 14h-2.08A6 6 0 1 1 12 6a5.9 5.9 0 0 1 4.22 1.78L13 11h7V4z"/></svg>
+      <span class="long">Refresh</span>
+    </button>
+    <button id="theme" type="button" class="ghost icon" aria-label="Appearance: automatic" title="Appearance: automatic">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20m0 18V4a8 8 0 0 1 0 16"/></svg>
+    </button>
+  </header>
+
+  <main class="grid">
+    <section class="card span-12" id="overview" aria-label="Overview"><div class="empty">Loading…</div></section>
+
+    <section class="card span-4" id="internet" aria-label="Internet" hidden></section>
+    <section class="card span-8" id="vlans" aria-label="Networks" hidden></section>
+    <section class="card span-12" id="unifi" aria-label="UniFi devices" hidden></section>
+
+    <section class="card span-5" id="hosts" aria-label="Hosts"></section>
+    <section class="card span-7" id="containers" aria-label="Containers"></section>
+
+    <section class="card span-8" id="uptime" aria-label="Uptime"></section>
+    <section class="card span-4" id="maintenance" aria-label="Backups and updates"></section>
+
+    <section class="card span-12" id="log" aria-label="What happened"></section>
+  </main>
+  <footer class="foot" id="foot">Station Health · view only</footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

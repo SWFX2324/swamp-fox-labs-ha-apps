@@ -13,6 +13,8 @@ as soon as it's published, so the fix for a problem is to update.
 | ADS-B Tracker, older releases | No |
 | Weather Observatory, latest release | Yes |
 | Weather Observatory, older releases | No |
+| Station Health, latest release | Yes |
+| Station Health, older releases | No |
 
 ## Reporting a vulnerability
 
@@ -37,6 +39,11 @@ crediting you unless you'd rather not be named.
   making it call a Home Assistant service that changes something, exposing its
   token or the exact home location, fetching anything other than its fixed
   weather sources, or reaching it other than through ingress.
+- Station Health's server and page (`station_health/app`): for example making it
+  send Home Assistant anything other than its read-only requests, sending the UniFi
+  console anything other than a sign-in and GET requests, exposing the Supervisor
+  token or the UniFi password to the page, letting a network client's name run code
+  in the page, or reaching it other than through ingress.
 - The image and how it's built: the AppArmor profile, the Dockerfile, the GitHub
   Actions workflows and image signing.
 
