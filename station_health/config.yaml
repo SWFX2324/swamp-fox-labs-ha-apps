@@ -1,5 +1,5 @@
 name: Station Health
-version: "1.0.0"
+version: "1.0.1"
 slug: station_health
 description: One view-only page for your hosts, containers, UniFi network and VLANs, backups and updates, with uptime and what happened
 url: https://github.com/SWFX2324/swamp-fox-labs-ha-apps/tree/main/station_health

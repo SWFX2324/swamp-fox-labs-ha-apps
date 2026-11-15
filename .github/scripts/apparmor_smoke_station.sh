@@ -30,6 +30,10 @@ for _ in $(seq 1 60); do
 done
 curl -sf "$BASE/api/health" > /dev/null || fail "the server didn't start"
 grep -q 'ingress only' <(docker logs "$NAME" 2>&1) || fail "the ingress-only rule isn't on inside the container"
+# s6 hides the image's environment from the app; it must still know its version.
+version=$(curl -sf "$BASE/api/health" | jq -r .version)
+echo "version: $version"
+[[ "$version" == ci ]] || fail "the app reports version '$version', not the image's 'ci'"
 
 for p in / /app.js /style.css /favicon.svg /assets/topo-dark.svg /api/health; do
   code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Accept-Encoding: gzip' "$BASE$p")

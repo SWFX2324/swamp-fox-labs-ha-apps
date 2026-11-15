@@ -13,20 +13,21 @@
 
 const fs = require('fs');
 
-// s6-overlay starts the app with a cleaned environment, so the token the
-// Supervisor gives the container may only be in s6's saved copy.
-function supervisorToken() {
-  if (process.env.SUPERVISOR_TOKEN) return process.env.SUPERVISOR_TOKEN;
+// s6-overlay starts the app with a cleaned environment, so a variable the
+// container has (the Supervisor's token, the image's APP_VERSION) may only be
+// in s6's saved copy.
+function containerEnv(name) {
+  if (process.env[name]) return process.env[name];
   for (const dir of ['/run/s6/container_environment', '/var/run/s6/container_environment']) {
-    for (const name of ['SUPERVISOR_TOKEN', 'HASSIO_TOKEN']) {
-      try {
-        const token = fs.readFileSync(`${dir}/${name}`, 'utf8').trim();
-        if (token) return token;
-      } catch { /* not there */ }
-    }
+    try {
+      const value = fs.readFileSync(`${dir}/${name}`, 'utf8').trim();
+      if (value) return value;
+    } catch { /* not there */ }
   }
-  return process.env.HASSIO_TOKEN || '';
+  return '';
 }
+
+const supervisorToken = () => containerEnv('SUPERVISOR_TOKEN') || containerEnv('HASSIO_TOKEN');
 
 class HaError extends Error {
   constructor(message, status = 0) { super(message); this.name = 'HaError'; this.status = status; }
@@ -148,4 +149,4 @@ class HomeAssistant {
   close() { this.drop(new HaError('closed')); }
 }
 
-module.exports = { HomeAssistant, HaError, supervisorToken, READ_ONLY };
+module.exports = { HomeAssistant, HaError, supervisorToken, containerEnv, READ_ONLY };

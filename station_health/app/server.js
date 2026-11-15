@@ -10,14 +10,16 @@ const fs = require('fs');
 const http = require('http');
 const path = require('path');
 const zlib = require('zlib');
-const { HomeAssistant } = require('./ha');
+const { HomeAssistant, containerEnv } = require('./ha');
 const { UniFi } = require('./unifi');
 const { Station } = require('./station');
 
 const PORT = Number(process.env.PORT) || 8099;
 const STATIC_DIR = path.join(__dirname, 'static');
 const DATA_DIR = process.env.DATA_DIR || (fs.existsSync('/data') ? '/data' : null);
-const VERSION = process.env.APP_VERSION || 'dev';
+// The image sets APP_VERSION; s6 may have kept it only in its saved copy.
+process.env.APP_VERSION = containerEnv('APP_VERSION') || 'dev';
+const VERSION = process.env.APP_VERSION;
 const STARTED = new Date().toISOString();
 
 function readOptions() {

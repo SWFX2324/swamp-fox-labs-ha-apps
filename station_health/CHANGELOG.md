@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+- **The footer shows the real version** instead of "dev". Home Assistant's container
+  start-up hid the version from the app, which also made browsers re-fetch the page's
+  script and styles after every restart.
+
 ## 1.0.0
 
 First release.
