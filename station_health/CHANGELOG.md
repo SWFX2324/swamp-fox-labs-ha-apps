@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.4
+
+- **UniFi devices fit a phone.** Each device is a card with its name and state on top
+  and labelled values below (clients, traffic, CPU and memory, temperature, uptime,
+  firmware), instead of a table squeezed to the screen. Traffic, CPU and temperature,
+  hidden on phones before, now show there too. Desktop is unchanged.
+
 ## 1.0.3
 
 - **The banner counts alerts:** "1 Alert", "2 Alerts", or "Everything is normal".

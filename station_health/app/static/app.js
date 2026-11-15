@@ -195,16 +195,16 @@
     const api = net.source === 'api';
     const kind = { gateway: 'gateway', switch: 'switch', ap: 'access point' };
     el.innerHTML = `${head('UniFi devices', `Status only${api ? '' : ' · from Home Assistant'}. Firmware updates stay in UniFi.`)}
-      <div class="tablewrap"><table>
-        <thead><tr><th>Device</th><th>State</th>${api ? '<th class="r">Clients</th><th class="r hide-sm">Traffic</th>' : ''}<th class="r hide-sm">CPU · Mem</th><th class="r hide-sm">Temp</th><th>Uptime</th><th>Firmware</th></tr></thead>
+      <div class="tablewrap"><table class="devices">
+        <thead><tr><th>Device</th><th>State</th>${api ? '<th class="r">Clients</th><th class="r">Traffic</th>' : ''}<th class="r">CPU · Mem</th><th class="r">Temp</th><th>Uptime</th><th>Firmware</th></tr></thead>
         <tbody>${net.devices.map(d => `<tr>
           <td class="n">${esc(d.name)} <span class="stack">${esc(kind[d.kind] || d.kind)}${d.poe ? ` · PoE ${esc(d.poe.usedW)} of ${esc(d.poe.maxW)} W` : ''}</span></td>
-          <td>${pill(d.level, cap(String(d.state || 'unknown').replace(/_/g, ' ')))}</td>
-          ${api ? `<td class="r mono">${isNum(d.clients) ? esc(d.clients) : dash}</td><td class="r mono hide-sm">${esc(rateText(d.rateBps))}</td>` : ''}
-          <td class="r mono hide-sm">${isNum(d.cpu) || isNum(d.mem) ? `${fmt(d.cpu)}% · ${fmt(d.mem)}%` : dash}</td>
-          <td class="r mono hide-sm">${isNum(d.temp) ? `${esc(d.temp)}${esc(d.tempUnit)}` : dash}</td>
-          <td class="meta">${d.state === 'connected' ? esc(ago(d.since)) : d.since ? `down ${esc(ago(d.since))}` : dash}</td>
-          <td>${d.firmware ? (d.firmware.update ? pill('warn', `Update ${d.firmware.latest && d.firmware.latest !== 'newer' ? d.firmware.latest : 'ready'}`) : pill('ok', d.firmware.installed || 'Current')) : dash}</td>
+          <td class="st">${pill(d.level, cap(String(d.state || 'unknown').replace(/_/g, ' ')))}</td>
+          ${api ? `<td class="r mono" data-label="Clients">${isNum(d.clients) ? esc(d.clients) : dash}</td><td class="r mono" data-label="Traffic">${esc(rateText(d.rateBps))}</td>` : ''}
+          <td class="r mono" data-label="CPU · Mem">${isNum(d.cpu) || isNum(d.mem) ? `${fmt(d.cpu)}% · ${fmt(d.mem)}%` : dash}</td>
+          <td class="r mono" data-label="Temp">${isNum(d.temp) ? `${esc(d.temp)}${esc(d.tempUnit)}` : dash}</td>
+          <td class="meta" data-label="Uptime">${d.state === 'connected' ? esc(ago(d.since)) : d.since ? `down ${esc(ago(d.since))}` : dash}</td>
+          <td data-label="Firmware">${d.firmware ? (d.firmware.update ? pill('warn', `Update ${d.firmware.latest && d.firmware.latest !== 'newer' ? d.firmware.latest : 'ready'}`) : pill('ok', d.firmware.installed || 'Current')) : dash}</td>
         </tr>`).join('')}</tbody>
       </table></div>`;
   }
