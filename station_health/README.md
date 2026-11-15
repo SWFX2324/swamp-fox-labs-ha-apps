@@ -2,8 +2,8 @@
 
 One view-only page in the Home Assistant sidebar for everything you run: Home
 Assistant itself, your NAS and PCs, Docker containers, your UniFi network and its
-VLANs, backups and updates. It tells you at a glance whether anything needs a look,
-and what changed just before something went down.
+VLANs, backups and updates. It shows any alerts at a glance, and what changed just
+before something went down.
 
 <p>
   <img src="https://raw.githubusercontent.com/SWFX2324/swamp-fox-labs-ha-apps/main/docs/screenshots/station_health/desktop.png" alt="Station Health: the overview banner, internet, networks (VLANs) and UniFi devices" width="72%">
@@ -20,9 +20,9 @@ The screenshots show a made-up home.
 
 ## What it shows
 
-- **A banner that says whether anything needs a look**, and lists what: a host or PC
-  not reporting, a container that stopped, a UniFi device offline, the internet down,
-  a failed or old backup, or an integration that won't load.
+- **Alerts at the top:** a banner that counts them ("2 Alerts") and lists each one:
+  a host or PC not reporting, a container that stopped, a UniFi device offline, the
+  internet down, a failed or old backup, or an integration that won't load.
 - **Hosts:** Home Assistant's own machine (uptime, disk), a Synology NAS (CPU,
   memory, volume, drives, temperature) and PCs with System Bridge (CPU, memory, disk).
   A PC that's asleep shows as "no data", not as down.
@@ -36,9 +36,9 @@ The screenshots show a made-up home.
   console's last speed test.
 - **Uptime** for the last 24 hours in 30-minute blocks, for every host, UniFi device,
   container (or stack) and the internet.
-- **What happened:** the last 7 days of outages, updates installed and new devices on
-  the network. Each outage lists any update or container event in the 15 minutes
-  before it, which often points straight at the cause.
+- **Recent Activity** (collapsible): the last 7 days of outages, updates installed
+  and new devices on the network. Each outage lists any update or container event in
+  the 15 minutes before it, which often points straight at the cause.
 - **Backups and pending updates**, with a link to install them in Home Assistant.
 - Light and dark appearance, phone and desktop layouts.
 

@@ -80,7 +80,7 @@ Restart the app after changing them.
 
 ## What's on the page
 
-- **Overview:** whether anything needs a look, and a list of what: a host or PC not
+- **Overview:** any alerts, counted in the banner ("2 Alerts") and listed: a host or PC not
   reporting, a container that isn't running, a UniFi device offline, the internet
   down, a failed or old backup, an integration that won't load. Tiles summarise
   containers, hosts, the internet, the network, the last backup and pending updates.
@@ -100,9 +100,10 @@ Restart the app after changing them.
 - **Backups & updates:** the last good backup and the next one, and every pending
   update. Install updates where you normally do; the page has a link to Home
   Assistant's Updates page.
-- **What happened:** the last 7 days of outages, updates installed and new devices on
+- **Recent Activity:** the last 7 days of outages, updates installed and new devices on
   the network. Each outage lists any update or container event in the 15 minutes
-  before it, which often points at the cause.
+  before it, which often points at the cause. Collapse it with its title; the page
+  remembers that in your browser.
 
 ## How often it updates
 

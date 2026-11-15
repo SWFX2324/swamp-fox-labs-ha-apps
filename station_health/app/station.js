@@ -64,10 +64,13 @@ class Station {
     this.registry = new Source('registry', {
       ttl: 10 * MIN, now,
       load: async () => {
-        const [entities, devices, entries, config] = await Promise.all([ha.entities(), ha.devices(), ha.configEntries(), ha.config()]);
-        return { entities, devices, entries, config };
+        const [entities, devices, config] = await Promise.all([ha.entities(), ha.devices(), ha.config()]);
+        return { entities, devices, config };
       },
     });
+    // Integration states change on their own (a reload, a retry), so they're
+    // read as often as states, not with the registries.
+    this.entries = new Source('entries', { ttl: 20_000, now, load: () => ha.configEntries() });
     this.supervisor = new Source('supervisor', {
       ttl: 5 * MIN, now,
       load: async () => {
@@ -124,7 +127,7 @@ class Station {
   // ---- history -------------------------------------------------------------------
 
   async loadHistory() {
-    await Promise.all([this.states.refresh(), this.registry.refresh()]);
+    await Promise.all([this.states.refresh(), this.registry.refresh(), this.entries.refresh()]);
     if (!this.states.data || !this.registry.data) throw new Error('Waiting for Home Assistant.');
     const base = this.build(false);
     const trackerList = M.trackers(base);
@@ -144,7 +147,7 @@ class Station {
     const now = this.now();
     const reg = this.registry.data || {};
     const unit = reg.config?.unit_system?.temperature || '°C';
-    const ix = M.indexHa({ states: this.states.data || [], entities: reg.entities || [], devices: reg.devices || [], entries: reg.entries || [] });
+    const ix = M.indexHa({ states: this.states.data || [], entities: reg.entities || [], devices: reg.devices || [], entries: this.entries.data || [] });
     const api = this.unifiSource?.data || null;
     const s = {
       hosts: M.hosts(ix, this.supervisor.data),
@@ -191,7 +194,7 @@ class Station {
 
   async snapshot({ force = false, waitMs = 6000 } = {}) {
     const work = Promise.all([
-      this.states.refresh(force), this.registry.refresh(force), this.supervisor.refresh(force),
+      this.states.refresh(force), this.registry.refresh(force), this.entries.refresh(force), this.supervisor.refresh(force),
       this.unifiSource?.refresh(force), this.history.refresh(force),
     ]);
     // Answer within waitMs with whatever is ready; slow sources show as loading.
@@ -209,7 +212,7 @@ class Station {
   }
 
   status() {
-    const out = { states: this.states.status(), registry: this.registry.status(), supervisor: this.supervisor.status(), history: this.history.status() };
+    const out = { states: this.states.status(), registry: this.registry.status(), entries: this.entries.status(), supervisor: this.supervisor.status(), history: this.history.status() };
     if (this.unifiSource) out.unifi = this.unifiSource.status();
     return out;
   }

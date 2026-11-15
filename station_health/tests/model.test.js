@@ -177,10 +177,12 @@ test('summary: nothing wrong, then one thing, then several', () => {
   const base = { hosts: [], containers: { list: [] }, network: { devices: [], wan: null }, backups: { level: 'ok' }, integrations: [], unifiError: null };
   assert.equal(M.summary(base, NOW).headline, 'Everything is normal');
   const one = M.summary({ ...base, network: { devices: [{ name: 'Garage AP', level: 'warn', state: 'disconnected', since: NOW - 2 * HOUR }], wan: null } }, NOW);
-  assert.equal(one.headline, '1 thing needs a look');
+  assert.equal(one.headline, '1 Alert');
   assert.match(one.detail, /Garage AP is disconnected \(2 h\)\. Everything else is normal\./);
-  const many = M.summary({ ...base, network: { devices: [], wan: { up: false, status: 'error' } }, backups: { failed: true }, hosts: [{ name: 'PC', kind: 'pc', state: 'offline', level: 'warn', since: NOW - HOUR }], integrations: [{ domain: 'system_bridge', title: 'PC', state: 'setup_retry' }, { domain: 'hue', title: 'Hue', state: 'setup_error' }] }, NOW);
+  const many = M.summary({ ...base, network: { devices: [], wan: { up: false, status: 'error' } }, backups: { failed: true }, hosts: [{ name: 'PC', kind: 'pc', state: 'offline', level: 'warn', since: NOW - HOUR }], integrations: [{ domain: 'system_bridge', title: 'PC', state: 'setup_retry' }, { domain: 'hue', title: 'Hue', state: 'setup_error' }, { domain: 'system_bridge', title: '192.168.1.20', state: 'loaded' }] }, NOW);
   assert.equal(many.level, 'bad');
+  assert.equal(many.headline, '4 Alerts');
+  assert.ok(many.needs.some(n => n.text === "Hue isn't working (setup error)."), 'a domain name, not a bare title');
   assert.equal(many.needs.length, 4, 'System Bridge failing is the same problem as the PC offline');
 });
 

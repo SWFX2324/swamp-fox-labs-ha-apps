@@ -176,6 +176,13 @@ td .stack, td small { color: var(--muted); font-weight: 400; font-size: 12px; }
 .pending li span:last-child { color: var(--muted); font-family: var(--mono); font-size: 12px; white-space: nowrap; }
 
 /* ---- log ---- */
+.collapse-btn { display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; padding: 2px 4px 2px 0; min-height: 0; color: inherit; font: inherit; cursor: pointer; }
+.collapse-btn svg { width: 20px; height: 20px; color: var(--muted); transition: transform .15s; }
+.collapse-btn:hover h2, .collapse-btn:focus-visible h2 { color: var(--accent); }
+.collapse-btn .count { font-size: 12px; font-weight: 600; color: var(--muted); background: var(--card-2); border-radius: 999px; padding: 1px 8px; }
+#log.collapsed .collapse-btn svg { transform: rotate(-90deg); }
+#log.collapsed .card-head { margin-bottom: 0; }
+#log.collapsed .card-head .meta { display: none; }
 .log { list-style: none; margin: 0; padding: 0; }
 .log li { display: grid; grid-template-columns: 14px 1fr; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); }
 .log li:first-child { border-top: 0; }

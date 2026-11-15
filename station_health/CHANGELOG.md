@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.3
+
+- **The banner counts alerts:** "1 Alert", "2 Alerts", or "Everything is normal".
+- **"What happened" is now "Recent Activity"**, and it collapses with a click on its
+  title. The page remembers your choice in this browser.
+- **An integration that recovers stops being an alert within a minute.** Integration
+  states were read with the registries, every 10 minutes, so a fixed integration kept
+  showing as broken. They're now read with the entity states.
+- **Integration alerts name the integration**, for example "System Bridge
+  (192.168.1.20)", not just an entry titled with an address.
+
 ## 1.0.2
 
 - **A UniFi Express meshed in as an access point is listed as one.** Express units

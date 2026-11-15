@@ -286,9 +286,30 @@
   }
 
   // ---- log ---------------------------------------------------------------------------------------
+  // Recent Activity can be collapsed; the choice is remembered in this browser.
+  let logOpen = true;
+  try { logOpen = localStorage.getItem('sh-log-open') !== 'false'; } catch { /* optional */ }
+  function logHead(count) {
+    const label = logOpen ? 'Collapse Recent Activity' : 'Expand Recent Activity';
+    return `<div class="card-head">
+      <button type="button" class="collapse-btn" id="log-toggle" aria-expanded="${logOpen}" aria-controls="log-body" title="${label}" aria-label="${label}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
+        <h2>Recent Activity</h2>${count ? `<span class="count">${count}</span>` : ''}
+      </button>
+      <span class="meta">Outages, updates and new devices over the last 7 days, with what changed just before</span>
+    </div>`;
+  }
+  $('log').addEventListener('click', e => {
+    if (!e.target.closest('#log-toggle')) return;
+    logOpen = !logOpen;
+    try { localStorage.setItem('sh-log-open', String(logOpen)); } catch { /* optional */ }
+    renderLog();
+  });
+
   function renderLog() {
     const list = snap.incidents;
-    if (!list) { $('log').innerHTML = head('What happened') + empty('Reading history from Home Assistant…'); return; }
+    $('log').classList.toggle('collapsed', !logOpen);
+    if (!list) { $('log').innerHTML = logHead(0) + (logOpen ? empty('Reading history from Home Assistant…') : ''); return; }
     const sev = { bad: 'bad', serious: 'serious', warn: 'warn', info: 'info', change: 'change' };
     const title = i => {
       if (i.kind === 'down') return i.ongoing ? `${i.subject} is down` : `${i.subject} was down ${span(i.end - i.start)}`;
@@ -299,13 +320,15 @@
     const time = i => (i.kind === 'down' || i.kind === 'offline'
       ? `${when(i.start)}${i.ongoing ? ` · ongoing ${span(Date.now() - i.start)}` : ` → ${dayKey(i.end) === dayKey(i.start) ? clock(i.end) : when(i.end)}`}`
       : when(i.start));
-    $('log').innerHTML = `${head('What happened', 'Outages, updates and new devices over the last 7 days, with what changed just before')}
+    $('log').innerHTML = `${logHead(list.length)}
+      <div id="log-body"${logOpen ? '' : ' hidden'}>
       ${list.length ? `<ul class="log">${list.map(i => `<li class="${esc(sev[i.severity] || 'info')}"><span class="d"></span><div>
         <div class="h">${esc(title(i))}</div>
         <div class="t">${esc(time(i))}</div>
         ${i.detail ? `<div class="x">${esc(i.detail)}</div>` : ''}
         ${i.before?.length ? `<div class="x">Right before: <b>${i.before.map(esc).join('</b>, <b>')}</b></div>` : ''}
-      </div></li>`).join('')}</ul>` : empty('Nothing went down in the last 7 days.')}`;
+      </div></li>`).join('')}</ul>` : empty('Nothing went down in the last 7 days.')}
+      </div>`;
   }
 
   // ---- data ----------------------------------------------------------------------------------------

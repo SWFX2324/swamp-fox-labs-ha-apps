@@ -572,6 +572,13 @@ const ago = ms => {
   return h < 48 ? `${h} h` : `${Math.round(h / 24)} days`;
 };
 
+// "System Bridge (192.168.1.20)" rather than an entry titled only by its address.
+const DOMAIN_NAMES = { system_bridge: 'System Bridge', synology_dsm: 'Synology DSM', portainer: 'Portainer', unifi: 'UniFi Network', hassio: 'Supervisor' };
+function integrationName(e) {
+  const name = DOMAIN_NAMES[e.domain] || String(e.domain || 'Integration').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  return e.title && e.title !== name ? `${name} (${e.title})` : name;
+}
+
 function summary(s, now) {
   const needs = [];
   for (const h of s.hosts) {
@@ -588,11 +595,11 @@ function summary(s, now) {
   const pcOffline = s.hosts.some(h => h.kind === 'pc' && h.state === 'offline');
   for (const e of s.integrations) {
     if (e.domain === 'system_bridge' && pcOffline) continue; // same problem, already listed
-    needs.push({ level: 'warn', text: `Integration ${e.title || e.domain} isn't working (${e.state.replace(/_/g, ' ')}).` });
+    needs.push({ level: 'warn', text: `${integrationName(e)} isn't working (${e.state.replace(/_/g, ' ')}).` });
   }
   if (s.unifiError) needs.push({ level: 'warn', text: `Can't read the UniFi console: ${s.unifiError}` });
   const level = needs.some(n => n.level === 'bad') ? 'bad' : needs.length ? 'warn' : 'ok';
-  const headline = needs.length === 0 ? 'Everything is normal' : `${needs.length} thing${needs.length === 1 ? ' needs' : 's need'} a look`;
+  const headline = needs.length === 0 ? 'Everything is normal' : `${needs.length} Alert${needs.length === 1 ? '' : 's'}`;
   const detail = needs.length === 0 ? 'Everything Home Assistant reports on is working.' : needs.length === 1 ? `${needs[0].text} Everything else is normal.` : null;
   return { level, headline, detail, needs };
 }
