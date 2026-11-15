@@ -111,7 +111,7 @@ number doesn't stop it.
 3. Press **Scan this spot** to load every aircraft inside the circle.
 
 Click somewhere else to move the spot, or click the dot (or press Esc) to clear it.
-Without a spot, the button reads **Scan map center** and scans around the middle of
+Without a spot, the button reads **Scan map** and scans around the middle of
 the map; hovering over it previews that circle.
 
 Pick an aircraft on the map or in the list and press **Track this flight** to follow

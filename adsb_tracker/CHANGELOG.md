@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.1
+
+- The Scan button reads **Scan map** when no spot is picked (it was "Scan map
+  center"). With a spot picked it still reads **Scan this spot**.
+
 ## 1.3.0
 
 - **Pick exactly where to scan.** Click or tap the map to drop a scan spot. A dashed

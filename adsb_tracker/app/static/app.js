@@ -407,7 +407,7 @@
     $('scan').title = core.mode === 'tracking' ? 'Stop tracking first to scan an area'
       : pick ? 'Load the aircraft inside the dashed circle' : 'Load the aircraft around the map’s center (or click the map first to pick a spot)';
     const [long, short] = $('scan').children;
-    const longText = pick ? 'Scan this spot' : 'Scan map center', shortText = pick ? 'Scan spot' : 'Scan center';
+    const longText = pick ? 'Scan this spot' : 'Scan map', shortText = pick ? 'Scan spot' : 'Scan map';
     if (long.textContent !== longText) { long.textContent = longText; short.textContent = shortText; }
     $('recenter').hidden = !(core.mode === 'tracking' && !core.follow && core.selected && hasPosition(core.selected));
     document.title = core.mode === 'tracking' ? `${core.label} · ADS-B Tracker` : 'ADS-B Tracker';
