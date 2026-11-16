@@ -11,6 +11,12 @@ configuration:
   low_spool_grams:
     name: Low spool warning (g)
     description: A spool with less filament than this gets a heads-up. A spool that will run out within two weeks at your recent pace gets one too.
+  electricity_price_per_kwh:
+    name: Electricity price per kWh
+    description: What you pay for electricity, for the cost of running the printer.
+  power_sensor:
+    name: Power sensor
+    description: Optional. The power sensor (in W) of a smart plug the printer is plugged into, for example sensor.printer_plug_power. Without one, the app estimates the printer's power from its heaters and whether it's printing.
   default_price_per_kg:
     name: Default price per kg
     description: Used for any material that isn't in the price list below.

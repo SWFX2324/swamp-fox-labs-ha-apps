@@ -1,5 +1,5 @@
 name: Print Log
-version: "1.0.3"
+version: "1.0.4"
 slug: print_log
 description: Every print your Bambu Lab printer makes, with filament per AMS slot, cost and spools running low. Pause, stop and start prints from Home Assistant.
 url: https://github.com/SWFX2324/swamp-fox-labs-ha-apps/tree/main/print_log
@@ -10,7 +10,8 @@ arch:
 init: false
 ingress: true
 # Reads states, the entity and device registries and Recorder history over the
-# Core WebSocket API, and camera snapshots over the Core REST API. The only
+# Core WebSocket API (including an optional power sensor), and camera
+# snapshots over the Core REST API. The only
 # services it calls are the printer's own Pause, Resume and Stop buttons and
 # bambu_lab.print_project_file, and only when "Printer controls" is on.
 homeassistant_api: true
@@ -23,6 +24,8 @@ options:
   printer_access_code: ""
   printer_serial: ""
   low_spool_grams: 150
+  electricity_price_per_kwh: 0.30
+  power_sensor: ""
   default_price_per_kg: 20
   filament_prices:
     - material: PLA
@@ -40,6 +43,8 @@ schema:
   printer_access_code: "password?"
   printer_serial: "match(^[A-Za-z0-9]{0,32}$)?"
   low_spool_grams: "int(0,5000)"
+  electricity_price_per_kwh: "float(0,10)"
+  power_sensor: "match(^(sensor\.[a-z0-9_]+)?$)?"
   default_price_per_kg: "float(0,1000)"
   filament_prices:
     - material: "match(^[A-Za-z0-9 +._-]{1,24}$)"

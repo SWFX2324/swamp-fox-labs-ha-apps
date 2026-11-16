@@ -242,3 +242,18 @@ test('Home Assistant unreachable: the page says so', async t => {
   assert.equal(s.ready, false);
   assert.match(s.error, /reach Home Assistant/);
 });
+
+test('energy: estimated by default, a plug when set, and it adds up', async t => {
+  const app = await start('');
+  t.after(app.stop);
+  let s = await app.state();
+  const en = s.printers[0].energy;
+  assert.equal(en.source, 'estimate');
+  assert.ok(en.watts > 100, 'heaters holding temperature while printing');
+  assert.equal(en.pricePerKwh, 0.3);
+  assert.ok(en.costPerHour > 0);
+  const plug = await start('', { OPTIONS_JSON: JSON.stringify({ allow_controls: true, power_sensor: 'sensor.workbench_plug_power', electricity_price_per_kwh: 0.5 }) });
+  t.after(plug.stop);
+  s = await plug.state();
+  assert.deepEqual([s.printers[0].energy.source, s.printers[0].energy.watts, s.printers[0].energy.costPerHour], ['sensor', 152, 0.076]);
+});

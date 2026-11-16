@@ -439,7 +439,54 @@ function amsMapping(pairs) {
   return arr.join(',');
 }
 
+// ---- power -------------------------------------------------------------------------
+
+// Rough heater and electronics figures for a Bambu printer, used when there's
+// no power sensor. A heater that's still well below its target is counted at
+// full power; one holding its temperature at a share that grows with how hot
+// it's held. Labelled "estimated" on the page.
+const POWER = {
+  idle: 14, busy: 45,                 // electronics, fans and motors (idle / printing)
+  bed: 700, nozzle: 60, chamber: 350, // heaters at full power
+};
+
+function heaterWatts(now, target, full, ambient = 25) {
+  if (!isFinite(target) || target === null || target <= 0 || now === null) return 0;
+  if (target - now > 4) return full;
+  const hold = Math.min(0.4, Math.max(0.06, (target - ambient) / 320));
+  return Math.round(full * hold);
+}
+
+// Watts the printer is drawing now: from a power sensor if one is set,
+// otherwise estimated. Returns { watts, source, parts }.
+function power(p, stateOf, { sensor = '' } = {}) {
+  if (sensor) {
+    const st = stateOf.get(sensor);
+    const raw = st && good(st.state) ? num(st.state) : null;
+    if (raw !== null) {
+      const unit = String(st.attributes?.unit_of_measurement || 'W');
+      const watts = unit === 'kW' ? raw * 1000 : unit === 'mW' ? raw / 1000 : raw;
+      return { watts: Math.round(Math.max(0, watts)), source: 'sensor', sensor, parts: null };
+    }
+    return { watts: null, source: 'sensor', sensor, parts: null, problem: st ? 'The power sensor has no reading right now.' : `${sensor} isn't in Home Assistant.` };
+  }
+  const s = k => stateOf.get(p.ent[k]);
+  const n = k => { const st = s(k); return st && good(st.state) ? num(st.state) : null; };
+  const status = s('print_status')?.state;
+  const online = s('online') ? s('online').state === 'on' : !GAP.has(String(status));
+  if (!online) return { watts: 0, source: 'estimate', parts: { electronics: 0, bed: 0, nozzles: 0, chamber: 0 }, offline: true };
+  const busy = ACTIVE.has(String(status));
+  const nozzleKeys = p.ent.left_nozzle_temp ? [['left_nozzle_temp', 'left_target_nozzle_temp'], ['right_nozzle_temp', 'right_target_nozzle_temp']] : [['nozzle_temp', 'target_nozzle_temp']];
+  const parts = {
+    electronics: busy ? POWER.busy : POWER.idle,
+    bed: heaterWatts(n('bed_temp'), n('target_bed_temp'), POWER.bed),
+    nozzles: nozzleKeys.reduce((a, [k, t]) => a + heaterWatts(n(k), n(t), POWER.nozzle), 0),
+    chamber: heaterWatts(n('chamber_temp'), n('target_chamber_temp'), POWER.chamber),
+  };
+  return { watts: Object.values(parts).reduce((a, b) => a + b, 0), source: 'estimate', parts };
+}
+
 module.exports = {
   printers, units, spoolFromAttrs, jobsFromHistory, mergeJobs, rows, stats, runOut, live, costOf, priceFor,
-  controlProblem, startProblem, suggestMapping, amsMapping, prettyName, trayEntities, localParts, DAY, HOUR, MIN,
+  controlProblem, startProblem, suggestMapping, amsMapping, power, heaterWatts, POWER, prettyName, trayEntities, localParts, DAY, HOUR, MIN,
 };

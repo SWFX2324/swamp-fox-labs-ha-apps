@@ -252,6 +252,9 @@ if (!switches.has('no_ams')) {
 entities.push({ entity_id: `sensor.${P}_externalspool_external_spool`, platform: 'bambu_lab', device_id: extDev.id, translation_key: 'external_spool', unique_id: `H2D_${SERIAL}_ExternalSpool_external_spool`, disabled_by: null });
 states.push({ entity_id: `sensor.${P}_externalspool_external_spool`, state: 'Empty', attributes: { empty: true, type: '', name: '', color: '#00000000', remain: -1 }, last_changed: iso(T0), last_updated: iso(T0) });
 
+// A smart plug's power sensor (not Bambu), for the power_sensor option.
+states.push({ entity_id: 'sensor.workbench_plug_power', state: printing ? '152.4' : '9.1', attributes: { unit_of_measurement: 'W', device_class: 'power' }, last_changed: iso(T0), last_updated: iso(T0) });
+
 // ---- Recorder history -------------------------------------------------------------------
 
 function historyFor(ids, start, end, withAttributes) {

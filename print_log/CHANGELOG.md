@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.4
+
+- **Energy card** in place of "Failed and stopped prints": the printer's power right
+  now, a two-hour graph, and the electricity cost of the print in progress, today,
+  this month and per print. Power is estimated from the heaters and temperatures, or
+  read from a smart plug's power sensor (the new **Power sensor** setting). Set your
+  rate with **Electricity price per kWh** (0.30 by default). Failed and stopped prints
+  are still under Print history.
+- **Each print's cost includes electricity** once the app has measured it.
+- **The Start buttons' text is readable**: it was grey on blue.
+
 ## 1.0.3
 
 - **The camera shows when nothing is printing**, with the temperatures, the printer's

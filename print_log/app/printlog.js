@@ -15,6 +15,7 @@ const threemf = require('./threemf');
 
 const MIN = 60_000, DAY = 86400_000;
 const SCAN_EVERY = 2 * MIN;
+const ENERGY_EVERY = 30_000;
 const FIRST_SCAN_DAYS = 30;
 const MAX_JOBS = 5000;
 const MAX_FILE = 512 * 1024 * 1024;   // largest .3mf sent to or read from the printer
@@ -40,7 +41,12 @@ class PrintLog {
     this.plans = new Map();
     this.filesClients = new Map();
     this.camera = new Map();
+    this.powerSensor = /^sensor.[a-z0-9_]+$/.test(String(options.power_sensor || '').trim()) ? String(options.power_sensor).trim() : '';
+    const rate = Number(options.electricity_price_per_kwh);
+    this.pricePerKwh = Number.isFinite(rate) && rate >= 0 ? rate : 0.3;
+    this.energy = { days: {}, jobs: {}, series: {}, last: {}, since: null };
     this.load();
+    this.loadEnergy();
   }
 
   // ---- storage ---------------------------------------------------------------------
@@ -151,9 +157,95 @@ class PrintLog {
     this.scan({ force: true });
     this.timer = setInterval(() => this.scan(), SCAN_EVERY);
     this.timer.unref?.();
+    this.sampleEnergy();
+    this.energyTimer = setInterval(() => this.sampleEnergy(), ENERGY_EVERY);
+    this.energyTimer.unref?.();
   }
 
-  stop() { clearInterval(this.timer); }
+  stop() { clearInterval(this.timer); clearInterval(this.energyTimer); this.saveEnergy(); }
+
+  // ---- energy ----------------------------------------------------------------------------
+
+  loadEnergy() {
+    const f = this.file('energy.json');
+    if (!f) return;
+    try {
+      const j = JSON.parse(fs.readFileSync(f, 'utf8'));
+      for (const k of ['days', 'jobs', 'series', 'last']) if (j[k] && typeof j[k] === 'object') this.energy[k] = j[k];
+      if (Number.isFinite(j.since)) this.energy.since = j.since;
+    } catch { /* first run */ }
+  }
+
+  saveEnergy() {
+    const f = this.file('energy.json');
+    if (!f) return;
+    try { fs.writeFileSync(f + '.tmp', JSON.stringify(this.energy)); fs.renameSync(f + '.tmp', f); } catch (e) { console.warn('[print-log] could not save energy:', e.message); }
+  }
+
+  // Every 30 s: the printer's power, added up (trapezoids) into today and the
+  // job in progress. A gap of more than two minutes (app restarted, Home
+  // Assistant away) isn't filled in.
+  async sampleEnergy() {
+    let w;
+    try { w = await this.world(25_000); } catch { return; }
+    const now = this.now();
+    const E = this.energy;
+    if (!E.since) E.since = now;
+    for (const p of w.printers) {
+      const pw = M.power(p, w.stateOf, { sensor: this.powerSensor });
+      if (pw.watts === null) continue;
+      const last = E.last[p.serial];
+      if (last && now - last.t <= 2 * MIN && now > last.t) {
+        const wh = (last.w + pw.watts) / 2 * (now - last.t) / 3600_000;
+        const day = M.localParts(now, w.timeZone).key;
+        E.days[p.serial] = E.days[p.serial] || {};
+        E.days[p.serial][day] = (E.days[p.serial][day] || 0) + wh;
+        const lv = M.live(p, w.stateOf, this.current[p.serial]);
+        const job = this.current[p.serial];
+        if (job && lv.printing) E.jobs[job.id] = (E.jobs[job.id] || 0) + wh;
+      }
+      E.last[p.serial] = { t: now, w: pw.watts };
+      const series = (E.series[p.serial] = E.series[p.serial] || []);
+      series.push([now, pw.watts]);
+      while (series.length && series[0][0] < now - 3 * 3600_000) series.shift();
+    }
+    // Keep 400 days and the 2000 newest jobs.
+    for (const days of Object.values(E.days)) for (const k of Object.keys(days).sort().slice(0, -400)) delete days[k];
+    const jobIds = Object.keys(E.jobs);
+    if (jobIds.length > 2000) for (const k of jobIds.sort((a, b) => Number(a.split(':')[1]) - Number(b.split(':')[1])).slice(0, jobIds.length - 2000)) delete E.jobs[k];
+    if (!this.lastEnergySave || now - this.lastEnergySave > 5 * MIN) { this.saveEnergy(); this.lastEnergySave = now; }
+  }
+
+  energyFor(p, w, now) {
+    const pw = M.power(p, w.stateOf, { sensor: this.powerSensor });
+    const price = this.pricePerKwh;
+    const cost = wh => Math.round(wh / 1000 * price * 100) / 100;
+    const days = this.energy.days[p.serial] || {};
+    const today = M.localParts(now, w.timeZone);
+    const month = Object.entries(days).filter(([k]) => k.startsWith(today.monthKey)).reduce((a, [, v]) => a + v, 0);
+    const pm = today.m === 1 ? `${today.y - 1}-12` : `${today.y}-${String(today.m - 1).padStart(2, '0')}`;
+    const lastMonth = Object.entries(days).filter(([k]) => k.startsWith(pm)).reduce((a, [, v]) => a + v, 0);
+    const todayWh = days[today.key] || 0;
+    const job = this.current[p.serial];
+    const jobWh = job ? this.energy.jobs[job.id] || 0 : null;
+    const ended = this.jobs.filter(j => j.printer === p.serial && j.end && this.energy.jobs[j.id]);
+    const lastJob = ended[0] || null;
+    const monthJobs = ended.filter(j => M.localParts(j.start, w.timeZone).monthKey === today.monthKey);
+    const avg = monthJobs.length ? monthJobs.reduce((a, j) => a + this.energy.jobs[j.id], 0) / monthJobs.length : null;
+    const series = (this.energy.series[p.serial] || []).filter(([t]) => t >= now - 2 * 3600_000);
+    const r1 = x => Math.round(x * 10) / 10;
+    return {
+      ...pw, pricePerKwh: price, since: this.energy.since,
+      costPerHour: pw.watts === null ? null : Math.round(pw.watts / 1000 * price * 1000) / 1000,
+      today: { wh: r1(todayWh), cost: cost(todayWh) },
+      month: { wh: r1(month), cost: cost(month) },
+      lastMonth: { wh: r1(lastMonth), cost: cost(lastMonth) },
+      job: job && jobWh !== null ? { name: job.name, wh: r1(jobWh), cost: cost(jobWh) } : null,
+      lastJob: lastJob ? { name: lastJob.name, plate: lastJob.plate, end: lastJob.end, wh: r1(this.energy.jobs[lastJob.id]), cost: cost(this.energy.jobs[lastJob.id]) } : null,
+      perPrint: avg === null ? null : { wh: r1(avg), cost: cost(avg) },
+      series,
+    };
+  }
 
   // ---- snapshot for the page ------------------------------------------------------------
 
@@ -172,7 +264,10 @@ class PrintLog {
     }
     if (ended) await Promise.race([ended, new Promise(r => setTimeout(r, 3000))]);
     const now = this.now();
-    const jobs = this.jobs.map(j => ({ ...j, cost: M.costOf(j, this.options) }));
+    const jobs = this.jobs.map(j => {
+      const wh = this.energy.jobs[j.id];
+      return { ...j, cost: M.costOf(j, this.options), energyWh: wh ? Math.round(wh * 10) / 10 : null, energyCost: wh ? Math.round(wh / 1000 * this.pricePerKwh * 100) / 100 : null };
+    });
     const printers = w.printers.map(p => {
       const current = this.current[p.serial] || null;
       const lv = M.live(p, w.stateOf, current);
@@ -186,13 +281,14 @@ class PrintLog {
           start: M.startProblem(p, lv, { allowControls: this.allowControls, filesReady }),
         },
         files: filesReady,
+        energy: this.energyFor(p, w, now),
       };
     });
     return {
       ready: true, version: process.env.APP_VERSION || 'dev', now, timeZone: w.timeZone,
       printers, jobs: jobs.slice(0, 300), jobCount: jobs.length,
       stats: M.stats(this.jobs, { now, timeZone: w.timeZone, options: this.options }),
-      settings: { allowControls: this.allowControls, lowGrams: this.lowGrams, currencyPrices: (this.options.filament_prices || []).map(x => ({ material: String(x.material), perKg: Number(x.price_per_kg) })), defaultPerKg: M.priceFor(null, this.options) },
+      settings: { pricePerKwh: this.pricePerKwh, powerSensor: this.powerSensor || null, allowControls: this.allowControls, lowGrams: this.lowGrams, currencyPrices: (this.options.filament_prices || []).map(x => ({ material: String(x.material), perKg: Number(x.price_per_kg) })), defaultPerKg: M.priceFor(null, this.options) },
       thumbs: this.thumbIndex(),
       errors: this.errors,
     };

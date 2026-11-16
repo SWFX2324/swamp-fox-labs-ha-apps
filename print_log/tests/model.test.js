@@ -218,3 +218,47 @@ test('Home Assistant client: only the allowed calls leave the app', async () => 
   await assert.rejects(ha.cameraSnapshot('lock.front_door'), /not a camera/);
   await assert.rejects(ha.call('get_states'), /Can't reach Home Assistant/, 'an allowed read goes through to the connection');
 });
+
+test('power: estimated from heaters, or read from a plug', () => {
+  const st = (id, s, a = {}) => [id, { entity_id: id, state: String(s), attributes: a }];
+  const reg = registry();
+  reg.entities.push(
+    { platform: 'bambu_lab', device_id: 'p', entity_id: 'sensor.x_bed', translation_key: 'bed_temp' },
+    { platform: 'bambu_lab', device_id: 'p', entity_id: 'sensor.x_bed_t', translation_key: 'target_bed_temp' },
+    { platform: 'bambu_lab', device_id: 'p', entity_id: 'sensor.x_noz', translation_key: 'nozzle_temp' },
+    { platform: 'bambu_lab', device_id: 'p', entity_id: 'sensor.x_noz_t', translation_key: 'target_nozzle_temp' },
+  );
+  const p = M.printers({ ...reg, states: [] })[0];
+  const heating = new Map([st('sensor.x_print_status', 'prepare'), st('binary_sensor.x_online', 'on'), st('sensor.x_bed', 30), st('sensor.x_bed_t', 65), st('sensor.x_noz', 215), st('sensor.x_noz_t', 220)]);
+  const a = M.power(p, heating);
+  assert.equal(a.source, 'estimate');
+  assert.deepEqual(a.parts, { electronics: M.POWER.busy, bed: M.POWER.bed, nozzles: M.heaterWatts(215, 220, M.POWER.nozzle), chamber: 0 });
+  const holding = new Map([...heating, st('sensor.x_bed', 65)]);
+  assert.ok(M.power(p, holding).watts < a.watts / 3, 'holding temperature uses far less than heating up');
+  const idle = new Map([st('sensor.x_print_status', 'idle'), st('binary_sensor.x_online', 'on')]);
+  assert.equal(M.power(p, idle).watts, M.POWER.idle);
+  assert.equal(M.power(p, new Map([st('binary_sensor.x_online', 'off')])).watts, 0, 'offline: off');
+  const plug = new Map([st('sensor.plug', 0.152, { unit_of_measurement: 'kW' })]);
+  assert.deepEqual(M.power(p, plug, { sensor: 'sensor.plug' }), { watts: 152, source: 'sensor', sensor: 'sensor.plug', parts: null });
+  assert.match(M.power(p, new Map(), { sensor: 'sensor.gone' }).problem, /isn't in Home Assistant/);
+});
+
+test('energy adds up between samples, into today and the running job, and skips long gaps', async () => {
+  const { PrintLog } = require('../app/printlog');
+  const reg = registry();
+  const states = [{ entity_id: 'sensor.x_print_status', state: 'running', attributes: {} }, { entity_id: 'binary_sensor.x_online', state: 'on', attributes: {} }, { entity_id: 'sensor.plug', state: '100', attributes: { unit_of_measurement: 'W' } }];
+  const ha = { entities: async () => reg.entities, devices: async () => reg.devices, config: async () => ({ time_zone: 'UTC' }), states: async () => states };
+  let now = Date.parse('2026-11-15T12:00:00Z');
+  const log = new PrintLog({ ha, options: { power_sensor: 'sensor.plug', electricity_price_per_kwh: 0.3 }, now: () => now });
+  log.current[S] = { id: `${S}:1`, name: 'Bracket' };
+  await log.sampleEnergy();
+  for (let i = 0; i < 120; i++) { now += 30_000; await log.sampleEnergy(); } // one hour at 100 W
+  now += 10 * 60_000; await log.sampleEnergy();                                // a 10-minute gap: not counted
+  const w = await log.world(0);
+  const en = log.energyFor(w.printers[0], w, now);
+  assert.equal(en.today.wh, 100);
+  assert.equal(en.today.cost, 0.03);
+  assert.deepEqual(en.job, { name: 'Bracket', wh: 100, cost: 0.03 });
+  assert.equal(en.costPerHour, 0.03);
+  assert.equal(en.series.length, 122);
+});

@@ -36,10 +36,13 @@ The screenshots show a made-up printer and spools.
 - **This month:** prints, success rate, print time, filament used and wasted, and
   what it cost, compared with last month.
 - **Filament per day** for 30 days, and by material.
-- **Failed and stopped prints:** how far each got, what the printer said (first
-  layer error, nozzle clog and so on), and the filament wasted.
-- **Print history:** every job with its plate, time, grams per slot, cost and
-  result. Filter by finished or failed.
+- **Energy:** the printer's power right now with a two-hour graph, and the electricity
+  cost of the print in progress, today, this month and per print. It's estimated from
+  the heaters and temperatures, or read from a smart plug's power sensor if you have
+  one.
+- **Print history:** every job with its plate, time, grams per slot, cost (filament
+  plus electricity) and result. Filter by finished or failed and stopped, with the
+  reason the printer gave for each failure.
 - Light and dark appearance, phone and desktop layouts.
 
 ## What you need
@@ -50,6 +53,7 @@ The screenshots show a made-up printer and spools.
 | Recorder | Built in. On first start, Print Log reads the jobs in Recorder's history (10 days by default), then keeps its own log. |
 | Developer LAN mode on the printer | Only for Pause, Resume, Stop and Start. Recent firmware ignores commands from Home Assistant without it. |
 | The printer's access code | Only for the printer's files: listing them, sending a `.3mf`, starting one and downloading one. |
+| A smart plug with power monitoring | Optional. Real power readings in place of the estimate. |
 
 Without the last two, everything else (the history, spools, statistics and the
 print in progress) still works. Turn **Printer controls** off on the app's

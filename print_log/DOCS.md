@@ -79,6 +79,8 @@ only connects to the address the Bambu Lab integration reports for the printer.
 | **Printer controls** | On: Pause, Resume, Stop and Start are on the page. Off: the page only reads. |
 | **Printer access code** | Optional. Enables the printer's files (above). |
 | **Printer serial number** | Only with more than one printer: which one the access code is for. |
+| **Electricity price per kWh** | What you pay for electricity (0.30 by default), for the energy card and each print's cost. |
+| **Power sensor** | Optional. A smart plug's power sensor (in W), for example `sensor.printer_plug_power`. Empty: the power is estimated (below). |
 | **Low spool warning (g)** | A spool with less than this gets a heads-up (150 g by default). A spool that will run out within two weeks at your recent pace gets one too. |
 | **Default price per kg** | For any material that isn't in the price list. |
 | **Filament prices** | Price per kilogram for each material, as the AMS names it (PLA, PETG, ASA, …). A variant such as PETG-HF uses PETG's price unless it has its own line. |
@@ -110,11 +112,18 @@ Restart the app after changing them.
   next to last month's.
 - **Filament per day:** grams for each of the last 30 days, failed prints in red, and
   the split by material.
-- **Failed and stopped prints:** the last 30 days, with how far each got, the reason the
-  printer gave (first layer error, nozzle clog, filament runout and so on) and the
-  filament it cost you.
+- **Energy:** the printer's power right now, what that costs an hour, a graph of the
+  last two hours, and the electricity cost of the print in progress (or the last one),
+  today, this month and the average print. Without a power sensor the watts are
+  **estimated**: a heater still warming up counts at full power (bed about 700 W,
+  each nozzle 60 W, chamber 350 W), one holding its temperature at a share of that,
+  plus 14 W idle or 45 W printing for the electronics, fans and motors. It's a fair
+  guide, not a meter; a smart plug with power monitoring gives real numbers. The
+  app adds the energy up every 30 seconds from when it's running (1.0.4 on), so the
+  totals start then.
 - **Print history:** every job, newest first, with its plate, time, grams per slot,
-  cost and result. A download button appears when the job's file is still on the
+  cost (filament plus electricity; hover for the split) and result. **Failed or
+  stopped** shows just those, with how far each got. A download button appears when the job's file is still on the
   printer.
 
 The page refreshes every 5 seconds while something prints and every 30 seconds

@@ -459,14 +459,41 @@
       <div class="mat">${s.materials.slice(0, 5).map(m => `<div class="row"><span>${esc(m.type)}</span><div class="t"><i style="width:${m.grams / total * 100}%"></i></div><span>${grams(m.grams)}</span></div>`).join('')}</div>`;
   }
 
-  function renderFailures() {
-    const list = (snap.jobs || []).filter(j => j.result !== 'finished' && j.end && j.end > Date.now() - 30 * 864e5);
-    $('failures').hidden = !(snap.jobCount > 0);
-    if (!snap.jobCount) return;
-    $('failures').innerHTML = `<div class="card-head"><h2>Failed and stopped prints</h2><span class="meta">Last 30 days</span></div>${list.length ? `<ul class="log">${list.slice(0, 6).map(j => `<li style="--c:var(${j.result === 'failed' ? '--critical' : '--warning'})"><span class="d"></span><div>
-      <div class="h">${esc(j.name)}${j.plate ? ` · plate ${j.plate}` : ''} ${j.result === 'failed' ? 'failed' : 'was stopped'}${isNum(j.progress) ? ` at ${j.progress}%` : ''}${j.layerReached && j.layers ? `, layer ${j.layerReached} of ${j.layers}` : ''}</div>
-      <div class="t">${esc(when(j.end))} · ${dur(j.seconds)} in</div>
-      <div class="x">${j.reason ? `Printer said: ${esc(j.reason)}. ` : ''}Wasted ${grams(j.grams)} · ${money(j.cost)}.</div></div></li>`).join('')}</ul>` : empty('No failed prints in the last 30 days.')}`;
+  // Energy: live power (a smart plug's sensor, or estimated), and what it cost.
+  function renderEnergy(p) {
+    const el = $('energy');
+    const en = p?.energy;
+    el.hidden = !en;
+    if (!en) return;
+    const kwh = wh => !isNum(wh) ? dash : wh >= 1000 ? `${(wh / 1000).toFixed(2)} kWh` : `${Math.round(wh)} Wh`;
+    const est = en.source === 'estimate';
+    const series = en.series || [];
+    let spark = '';
+    if (series.length > 2) {
+      const t0 = series[0][0], t1 = series[series.length - 1][0], max = Math.max(50, ...series.map(x => x[1]));
+      const pts = series.map(([t, w]) => `${((t - t0) / Math.max(1, t1 - t0) * 300).toFixed(1)},${(60 - w / max * 56).toFixed(1)}`).join(' ');
+      spark = `<svg class="spark" viewBox="0 0 300 60" preserveAspectRatio="none" role="img" aria-label="Power over the last ${Math.max(1, Math.round((t1 - t0) / 60000))} minutes, up to ${max} W"><polyline points="0,60 ${pts} 300,60" class="area"/><polyline points="${pts}" class="line"/></svg>
+        <div class="chart-axis"><span>${esc(clock(t0))}</span><span>peak ${Math.round(Math.max(...series.map(x => x[1])))} W</span><span>now</span></div>`;
+    }
+    const parts = est && en.parts && !en.offline ? `<div class="chips power-parts">${[['Bed', en.parts.bed], ['Nozzles', en.parts.nozzles], ['Chamber', en.parts.chamber], ['Electronics', en.parts.electronics]].map(([l, w]) => `<span class="chip">${l} ${Math.round(w)} W</span>`).join('')}</div>` : '';
+    const tile = (label, wh, cost, sub) => `<div class="tile"><span class="label">${label}</span><span class="value">${money(cost)}</span><span class="sub">${kwh(wh)}${sub ? ` · ${sub}` : ''}</span></div>`;
+    const jobTile = en.job ? tile('This print so far', en.job.wh, en.job.cost, esc(en.job.name))
+      : en.lastJob ? tile('Last print', en.lastJob.wh, en.lastJob.cost, esc(en.lastJob.name))
+      : `<div class="tile"><span class="label">Last print</span><span class="value">${dash}</span><span class="sub">After the next print</span></div>`;
+    el.innerHTML = `<div class="card-head"><h2>Energy</h2><span class="meta">${est ? '<span class="badge damp">Estimated</span> ' : `From ${esc(en.sensor)} · `}${money(en.pricePerKwh)} per kWh</span></div>
+      <div class="power-now">
+        <div><span class="watts mono">${isNum(en.watts) ? Math.round(en.watts) : dash}<span class="unit">W</span></span>
+          <span class="meta">${en.offline ? 'Printer offline' : isNum(en.costPerHour) ? `≈ ${money(en.costPerHour)} an hour at this rate` : esc(en.problem || '')}</span></div>
+        ${parts}
+      </div>
+      ${spark}
+      <div class="tiles energy-tiles">
+        ${jobTile}
+        ${tile('Today', en.today.wh, en.today.cost)}
+        ${tile('This month', en.month.wh, en.month.cost, `last month ${money(en.lastMonth.cost)}`)}
+        ${tile('Per print', en.perPrint?.wh, en.perPrint?.cost, en.perPrint ? 'average this month' : 'after a print')}
+      </div>
+      <p class="note">${est ? 'Estimated from the printer’s heaters, temperatures and whether it’s printing. Add a smart plug’s power sensor on the Configuration tab for real readings. ' : ''}Counted since ${esc(fmt(en.since || Date.now(), { month: 'short', day: 'numeric' }))}; failed and stopped prints are under Print history.</p>`;
   }
 
   // ---- history --------------------------------------------------------------------------------------
@@ -495,7 +522,7 @@
         <td data-label="Time" class="mono">${dur(j.seconds)}</td>
         <td class="c" data-label="Filament by slot"><div class="chips">${j.slots?.length ? j.slots.map(s => `<span class="chip" style="${sw(s.color)}" title="${esc(s.name || s.type || '')}">${esc(s.label)} ${grams(s.grams)}</span>`).join('') : `<span class="meta">${dash}</span>`}</div></td>
         <td class="r mono" data-label="Used">${grams(j.grams)}</td>
-        <td class="r mono" data-label="Cost">${money(j.cost)}</td>
+        <td class="r mono" data-label="Cost" title="${esc(`Filament ${money(j.cost)}${isNum(j.energyCost) ? ` · electricity ${money(j.energyCost)} (${Math.round(j.energyWh)} Wh)` : ''}`)}">${money(isNum(j.energyCost) && isNum(j.cost) ? j.cost + j.energyCost : j.cost)}</td>
         <td class="r s"><span class="pill ${cls}">${esc(label)}</span></td>
         <td class="r o">${f ? `<a class="btn icon sm" href="api/download?printer=${encodeURIComponent(j.printer)}&path=${encodeURIComponent(f.path)}" download title="Download ${esc(f.name)} for Bambu Studio" aria-label="Download for Bambu Studio">${ICON.open}</a>` : ''}</td>
       </tr>`;
@@ -552,7 +579,7 @@
     }
     if (sel && !snap.printers.some(p => p.serial === sel)) sel = null;
     const p = printer();
-    for (const [name, fn] of [['top', renderTop], ['live', renderLive], ['start', renderStart], ['spools', renderSpools], ['month', renderMonth], ['chart', renderChart], ['failures', renderFailures], ['history', renderHistory]]) {
+    for (const [name, fn] of [['top', renderTop], ['live', renderLive], ['start', renderStart], ['spools', renderSpools], ['month', renderMonth], ['chart', renderChart], ['energy', renderEnergy], ['history', renderHistory]]) {
       try { fn(p); } catch (e) { console.error(name, e); if ($(name)) { $(name).hidden = false; $(name).innerHTML = empty(`This panel couldn't be drawn (${e.message}).`, true); } }
     }
     $('foot').textContent = `Print Log ${snap.version} · ${snap.settings.allowControls ? 'Pause, Stop and Start go through Home Assistant\'s Bambu Lab integration' : 'view only: printer controls are off'}`;
