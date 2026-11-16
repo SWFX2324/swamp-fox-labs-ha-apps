@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.7
+
+- **The printer's certificate is checked** on its file connection: it must come from
+  Bambu Lab's authorities and name the printer's serial number before the app sends
+  the access code. Before, the app didn't check it, so anything answering at the
+  printer's address on your network could have collected the code.
+
 ## 1.0.6
 
 - **Chamber light switch on the camera**: turn the printer's chamber light on or off

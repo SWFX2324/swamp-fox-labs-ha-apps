@@ -5,11 +5,14 @@
 // and download one. Each operation opens its own short session, one at a time.
 //
 // The printer's certificate is issued by Bambu Lab's own authority, not one the
-// system trusts, so it isn't verified; the connection only goes to the address
-// the Bambu Lab integration reports for the printer, on the local network.
+// system trusts. It's checked against Bambu Lab's authorities (certs/bambu.pem),
+// and its name must be the printer's serial number, before the access code is
+// sent. The address is the one the Bambu Lab integration reports.
 // Data connections reuse the control connection's TLS session, which the
 // printer requires.
 
+const fs = require('fs');
+const path = require('path');
 const net = require('net');
 const tls = require('tls');
 
@@ -19,17 +22,33 @@ class FtpError extends Error {
 
 const SAFE_PATH = /^\/[^\x00-\x1f\x7f]{0,300}$/;
 
-const TLS_OPTIONS = { rejectUnauthorized: false, maxVersion: 'TLSv1.2', minVersion: 'TLSv1.2' };
+const BAMBU_CA = fs.readFileSync(path.join(__dirname, 'certs', 'bambu.pem'), 'utf8');
+
+// The printer's certificate is issued to its serial number, not to its address.
+function checkPrinter(serial) {
+  return (_host, cert) => {
+    const cn = String(cert?.subject?.CN || '');
+    if (!serial || cn.toUpperCase() !== String(serial).toUpperCase()) {
+      return new FtpError(`The printer's certificate is for "${cn || 'nothing'}", not this printer (${serial || 'no serial'}).`, 'WRONG_PRINTER');
+    }
+    return undefined;
+  };
+}
+
+const tlsOptions = serial => ({
+  ca: BAMBU_CA, rejectUnauthorized: true, checkServerIdentity: checkPrinter(serial),
+  maxVersion: 'TLSv1.2', minVersion: 'TLSv1.2',
+});
 
 // Real use: TLS from the first byte, data channels wrapped after the server's
 // 150 reply with the control session. Tests pass plain TCP instead.
 const TLS_TRANSPORT = {
-  control: (host, port) => tls.connect({ host, port, ...TLS_OPTIONS }),
+  control: (host, port, serial) => tls.connect({ host, port, ...tlsOptions(serial) }),
   // host must be given even with an existing socket: without it Node treats
   // the connection as one to "localhost", and the printer (vsFTPd with
   // require_ssl_reuse) refuses a data connection that doesn't resume the session.
-  wrapData: (raw, control, host) => new Promise((resolve, reject) => {
-    const s = tls.connect({ socket: raw, host, session: control.getSession?.(), ...TLS_OPTIONS }, () => resolve(s));
+  wrapData: (raw, control, host, serial) => new Promise((resolve, reject) => {
+    const s = tls.connect({ socket: raw, host, session: control.getSession?.(), ...tlsOptions(serial) }, () => resolve(s));
     s.on('error', reject);
   }),
 };
@@ -98,12 +117,14 @@ function friendly(e) {
   if (e.code === 'ECONNREFUSED') return 'The printer refused the file connection (port 990). Is LAN access turned on in its network settings?';
   if (e.code === 'ETIMEDOUT' || e.code === 'EHOSTUNREACH' || e.code === 'ENETUNREACH') return "Can't reach the printer on the network.";
   if (e.code === 'ECONNRESET') return 'The printer dropped the connection.';
+  if (e.code === 'WRONG_PRINTER') return e.message;
+  if (/CERT|SELF_SIGNED|ISSUER|SIGNATURE/.test(String(e.code || ''))) return `The printer's certificate isn't one Bambu Lab issued (${e.code}), so the app won't send it the access code.`;
   return `Can't talk to the printer (${e.code || e.message}).`;
 }
 
 class PrinterFiles {
-  constructor({ host, accessCode, port = 990, transport = TLS_TRANSPORT, timeoutMs = 20_000 } = {}) {
-    Object.assign(this, { host, accessCode, port, transport, timeoutMs });
+  constructor({ host, accessCode, serial, port = 990, transport = TLS_TRANSPORT, timeoutMs = 20_000 } = {}) {
+    Object.assign(this, { host, accessCode, serial, port, transport, timeoutMs });
     this.queue = Promise.resolve();
   }
 
@@ -118,7 +139,7 @@ class PrinterFiles {
 
   async session(fn) {
     if (!this.configured) throw new FtpError('Add the printer\'s access code on the app\'s Configuration tab to use its files.');
-    const socket = this.transport.control(this.host, this.port);
+    const socket = this.transport.control(this.host, this.port, this.serial);
     const s = new Session(socket, this.timeoutMs);
     socket.setTimeout?.(this.timeoutMs * 3, () => socket.destroy(new FtpError('The printer stopped answering.')));
     try {
@@ -152,7 +173,7 @@ class PrinterFiles {
     try {
       await s.cmd(command, 150, 125);
     } catch (e) { raw.destroy(); throw e; }
-    return this.transport.wrapData ? this.transport.wrapData(raw, s.socket, this.host) : raw;
+    return this.transport.wrapData ? this.transport.wrapData(raw, s.socket, this.host, this.serial) : raw;
   }
 
   list(dir = '/') {
@@ -244,4 +265,4 @@ function parseList(text, dir, now = new Date()) {
   return out;
 }
 
-module.exports = { PrinterFiles, FtpError, parseList, TLS_TRANSPORT, SAFE_PATH };
+module.exports = { PrinterFiles, FtpError, parseList, TLS_TRANSPORT, SAFE_PATH, BAMBU_CA, checkPrinter, friendly };

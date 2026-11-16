@@ -266,3 +266,20 @@ test('energy adds up between samples, into today and the running job, and skips 
   assert.equal(en.costPerHour, 0.03);
   assert.equal(en.series.length, 122);
 });
+
+test('printer certificate: Bambu Lab authorities only, and the name must be the serial', () => {
+  const crypto = require('node:crypto');
+  const { BAMBU_CA, checkPrinter, friendly } = require('../app/ftps');
+  const certs = BAMBU_CA.match(/-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/g).map(p => new crypto.X509Certificate(p));
+  assert.ok(certs.length >= 5);
+  assert.ok(certs.every(c => c.ca && /O=BBL Technologies/.test(c.subject)), 'only Bambu Lab CAs');
+  assert.ok(certs.some(c => /CN=BBL CA2 RSA/.test(c.subject) && c.subject === c.issuer), 'the root newer printers chain to');
+  assert.doesNotMatch(BAMBU_CA, /PRIVATE KEY/);
+  const check = checkPrinter('09400A000000001');
+  assert.equal(check('192.168.1.50', { subject: { CN: '09400A000000001' } }), undefined);
+  assert.equal(check('192.168.1.50', { subject: { CN: '09400a000000001' } }), undefined, 'case does not matter');
+  assert.match(check('192.168.1.50', { subject: { CN: '01P00A000000000' } }).message, /not this printer/);
+  assert.match(check('192.168.1.50', {}).message, /not this printer/);
+  assert.match(checkPrinter('')('h', { subject: { CN: '' } }).message, /not this printer/, 'no serial: refuse');
+  assert.match(friendly({ code: 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY' }), /won't send it the access code/);
+});

@@ -158,6 +158,11 @@ Assistant's backups of the app.
   It changes if you reset it there.
 - **"The printer refused the file connection (port 990)":** LAN access is off on the
   printer, or something on your network blocks Home Assistant from reaching it.
+- **"The printer's certificate isn't one Bambu Lab issued" or "…not this printer":**
+  the app reached something at the printer's address that didn't prove it's your
+  printer, so it didn't send the access code. Check that the address the Bambu Lab
+  integration shows for the printer is right. A printer model newer than this version
+  of the app may also use a Bambu authority it doesn't know yet; update the app.
 - **"That .3mf isn't sliced yet":** export a sliced file from Bambu Studio (File >
   Export > Export plate sliced file), not the project.
 - **A job is missing:** it ended while Home Assistant was off and Recorder didn't record
@@ -182,6 +187,8 @@ Assistant's backups of the app.
 - The printer's access code and Home Assistant's token stay in the app and never reach
   the browser or the log.
 - Inside Home Assistant only the ingress proxy can reach the app, and it runs under an
-  enforced AppArmor profile. The printer connection uses TLS; the printer's certificate
-  is issued by Bambu Lab rather than a public authority, so the app doesn't verify it
-  and only ever connects to the address the integration reports.
+  enforced AppArmor profile. The printer connection uses TLS. The printer's certificate
+  is issued by Bambu Lab rather than a public authority, so the app checks it against
+  Bambu Lab's own authorities (shipped with the app) and requires it to name the
+  printer's serial number. Only then does it send the access code. It only connects
+  to the address the integration reports.

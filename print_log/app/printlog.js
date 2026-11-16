@@ -335,7 +335,7 @@ class PrintLog {
     const host = lv?.ip;
     if (!host || !/^[0-9a-fA-F:.]{3,45}$/.test(host)) return null;
     const key = `${p.serial}|${host}`;
-    if (!this.filesClients.has(key)) this.filesClients.set(key, this.filesFactory({ host, accessCode: code }));
+    if (!this.filesClients.has(key)) this.filesClients.set(key, this.filesFactory({ host, accessCode: code, serial: p.serial }));
     return this.filesClients.get(key);
   }
 
