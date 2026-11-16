@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+- **This month and Filament per day work inside Home Assistant.** The app read dates
+  in a format the container's Node.js doesn't have, so the month showed "Invalid
+  Date" with no prints and the daily chart put everything on one day.
+
 ## 1.0.0
 
 - First release: a history of every print from Home Assistant's Bambu Lab integration,

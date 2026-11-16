@@ -270,15 +270,17 @@ function costOf(job, options) {
 
 // Local calendar parts in Home Assistant's time zone.
 function localParts(t, timeZone) {
+  // formatToParts, not a formatted string: Node's ICU data in the container may
+  // not have the locale, and a fallback locale orders the date differently.
+  let y, m, d;
   try {
-    const f = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(t));
-    const [y, m, d] = f.split('-').map(Number);
-    return { y, m, d, key: f, monthKey: f.slice(0, 7) };
-  } catch {
-    const dt = new Date(t);
-    const key = dt.toISOString().slice(0, 10);
-    return { y: dt.getUTCFullYear(), m: dt.getUTCMonth() + 1, d: dt.getUTCDate(), key, monthKey: key.slice(0, 7) };
-  }
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone, year: 'numeric', month: 'numeric', day: 'numeric' }).formatToParts(new Date(t));
+    const get = type => Number(parts.find(p => p.type === type)?.value);
+    [y, m, d] = [get('year'), get('month'), get('day')];
+  } catch { /* unknown time zone */ }
+  if (![y, m, d].every(Number.isFinite)) { const dt = new Date(t); [y, m, d] = [dt.getUTCFullYear(), dt.getUTCMonth() + 1, dt.getUTCDate()]; }
+  const key = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  return { y, m, d, key, monthKey: key.slice(0, 7) };
 }
 
 function stats(jobs, { now = Date.now(), timeZone = 'UTC', options = {} } = {}) {

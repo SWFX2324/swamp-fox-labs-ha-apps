@@ -1,5 +1,5 @@
 name: Print Log
-version: "1.0.0"
+version: "1.0.1"
 slug: print_log
 description: Every print your Bambu Lab printer makes, with filament per AMS slot, cost and spools running low. Pause, stop and start prints from Home Assistant.
 url: https://github.com/SWFX2324/swamp-fox-labs-ha-apps/tree/main/print_log
