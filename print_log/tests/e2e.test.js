@@ -39,7 +39,8 @@ async function start(world = '', env = {}) {
   };
   return {
     base, get, json, post, state, dataDir, log: () => log,
-    stop: () => { child.kill(); px.server.close(); fs.rmSync(dataDir, { recursive: true, force: true }); },
+    // Wait for the app to exit (it saves its energy log on the way out) before removing its folder.
+    stop: async () => { px.server.close(); const gone = new Promise(r => child.once('exit', r)); child.kill(); await gone; fs.rmSync(dataDir, { recursive: true, force: true, maxRetries: 5 }); },
   };
 }
 
