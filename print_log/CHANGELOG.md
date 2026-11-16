@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2
+
+- **The printer's files load.** The printer refused the file list with "session reuse
+  required": the app's data connection didn't resume the encrypted session the way
+  the printer requires. Listing, sending, starting and downloading files work now.
+
 ## 1.0.1
 
 - **This month and Filament per day work inside Home Assistant.** The app read dates

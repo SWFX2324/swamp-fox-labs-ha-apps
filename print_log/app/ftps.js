@@ -25,8 +25,11 @@ const TLS_OPTIONS = { rejectUnauthorized: false, maxVersion: 'TLSv1.2', minVersi
 // 150 reply with the control session. Tests pass plain TCP instead.
 const TLS_TRANSPORT = {
   control: (host, port) => tls.connect({ host, port, ...TLS_OPTIONS }),
-  wrapData: (raw, control) => new Promise((resolve, reject) => {
-    const s = tls.connect({ socket: raw, session: control.getSession?.(), ...TLS_OPTIONS }, () => resolve(s));
+  // host must be given even with an existing socket: without it Node treats
+  // the connection as one to "localhost", and the printer (vsFTPd with
+  // require_ssl_reuse) refuses a data connection that doesn't resume the session.
+  wrapData: (raw, control, host) => new Promise((resolve, reject) => {
+    const s = tls.connect({ socket: raw, host, session: control.getSession?.(), ...TLS_OPTIONS }, () => resolve(s));
     s.on('error', reject);
   }),
 };
@@ -149,7 +152,7 @@ class PrinterFiles {
     try {
       await s.cmd(command, 150, 125);
     } catch (e) { raw.destroy(); throw e; }
-    return this.transport.wrapData ? this.transport.wrapData(raw, s.socket) : raw;
+    return this.transport.wrapData ? this.transport.wrapData(raw, s.socket, this.host) : raw;
   }
 
   list(dir = '/') {
