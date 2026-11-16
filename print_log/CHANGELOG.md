@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.8
+
+- **The app's own icon** in the page header and the browser tab, in place of the
+  placeholder mark.
+- Newer Home Assistant base image.
+
 ## 1.0.7
 
 - **The printer's certificate is checked** on its file connection: it must come from
