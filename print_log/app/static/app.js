@@ -185,19 +185,31 @@
     }
     const last = (snap.jobs || []).find(j => j.printer === p.serial);
     const statusPill = !lv.online ? ['off', 'Offline'] : lv.error ? ['bad', 'Needs a look'] : ['off', lv.status === 'finish' ? 'Finished' : lv.status === 'failed' ? (last?.result === 'stopped' ? 'Stopped' : 'Failed') : 'Idle'];
-    el.innerHTML = `<div class="idle-row">
-      <span class="pill ${statusPill[0]}">${statusPill[1]}</span>
-      <div class="big">${esc(p.name)}</div>
-      <div class="facts">
-        ${nozzleText ? `<span>Nozzles <b>${esc(nozzleText)}</b></span>` : ''}
-        ${lv.plateType ? `<span>Plate <b>${esc(nice(lv.plateType))}</b></span>` : ''}
-        ${isNum(lv.chamber.now) ? `<span>Chamber <b>${Math.round(lv.chamber.now)}°</b></span>` : ''}
-        ${last ? `<span>Last job <b>${esc(last.name)}${last.plate ? ` · plate ${last.plate}` : ''}</b> ${esc(RESULT[last.result]?.[1].toLowerCase() || '')} ${esc(when(last.end))}</span>` : ''}
-      </div>
-    </div>`;
+    const facts = [
+      nozzleText && `<span>Nozzles <b>${esc(nozzleText)}</b></span>`,
+      lv.plateType && `<span>Plate <b>${esc(nice(lv.plateType))}</b></span>`,
+      last && `<span>Last job <b>${esc(last.name)}${last.plate ? ` · plate ${last.plate}` : ''}</b> ${esc(RESULT[last.result]?.[1].toLowerCase() || '')} ${esc(when(last.end))}</span>`,
+    ].filter(Boolean).join('');
+    const pill = `<span class="pill ${statusPill[0]}">${statusPill[1]}</span>`;
+    if (lv.camera && lv.online) {
+      el.innerHTML = `<div class="live">
+        <div class="cam"><img id="cam-img" alt="Printer camera"><span class="tag">Camera</span></div>
+        <div>
+          <div class="top"><div><div class="job-nm">${esc(p.name)}</div><div class="job-sub">${esc([p.model, p.firmware && `firmware ${p.firmware}`].filter(Boolean).join(' · '))}</div></div>${pill}</div>
+          <div class="facts4">${temps}</div>
+          <div class="idle-facts">${facts}</div>
+        </div>
+      </div>`;
+      const newCam = $('cam-img');
+      if (oldCam && newCam && oldCam.src) newCam.replaceWith(oldCam);
+      if (!camRunning) camLoop();
+      return;
+    }
+    el.innerHTML = `<div class="idle-row">${pill}<div class="big">${esc(p.name)}</div><div class="facts">${facts}</div></div>`;
   }
 
-  // Camera: a fresh snapshot every 10 s while printing, swapped in once loaded.
+  // Camera: a fresh snapshot every 10 s while printing (30 s otherwise),
+  // swapped in once loaded.
   let camTimer = null, camRunning = false;
   function camLoop() {
     clearTimeout(camTimer);
@@ -206,7 +218,7 @@
     camRunning = true;
     const url = `api/camera?${q(p)}&t=${Date.now()}`;
     const pre = new Image();
-    const next = () => { camTimer = setTimeout(camLoop, 10_000); };
+    const next = () => { camTimer = setTimeout(camLoop, p.live.printing ? 10_000 : 30_000); };
     pre.onload = () => { const cur = $('cam-img'); if (cur) { cur.src = url; cur.parentElement.querySelector('.none')?.remove(); } next(); };
     pre.onerror = () => { const cam = $('cam-img')?.parentElement; if (cam && !cam.querySelector('.none')) cam.insertAdjacentHTML('beforeend', '<div class="none">No camera picture</div>'); next(); };
     pre.src = url;
@@ -227,7 +239,7 @@
     else if (files.error) list = empty(files.error, true);
     else if (!files.list.length) list = empty('No .3mf files on the printer yet.');
     else {
-      list = `<ul class="files">${files.list.slice(0, 8).map(f => `<li>
+      list = `<ul class="files" tabindex="0" aria-label="Files on the printer, newest first">${files.list.map(f => `<li>
         <div class="thumb">${thumbImg(f.thumb)}</div>
         <div style="min-width:0"><div class="nm" title="${esc(f.name)}">${esc(f.name.replace(/\.gcode\.3mf$|\.3mf$/i, ''))}</div><div class="sm">${esc(f.path.startsWith('/cache/') ? 'cache · ' : '')}${f.mtime ? esc(when(f.mtime)) : ''} · ${size(f.size)}</div></div>
         <div class="acts">
@@ -235,14 +247,16 @@
           <button type="button" class="sm primary" data-act="plan" data-path="${esc(f.path)}" ${why ? `disabled title="${esc(why)}"` : ''}>Start</button>
         </div></li>`).join('')}</ul>`;
     }
+    const scrolled = el.querySelector('.files')?.scrollTop || 0;
     el.innerHTML = `<div class="card-head"><h2>Start a print</h2><span class="meta">${esc(why && p.files ? why : 'Sliced .3mf files on the printer')}</span></div>
       <div class="drop" id="drop">${ICON.upload}
         Drop a sliced <b>.3mf</b> here to send it to the printer
         <div class="row"><button type="button" class="sm primary" data-act="choose" ${uploadOk ? '' : `disabled title="${esc(p.files ? 'The printer is offline.' : 'Add the printer\'s access code first.')}"`}>Choose file</button></div>
         <div class="upbar" id="upbar" hidden><i style="width:0"></i></div>
       </div>
-      <div class="sub-h"><span>On the printer</span>${p.files ? `<button type="button" class="ghost icon sm" data-act="files-refresh" title="Refresh the list" aria-label="Refresh the list">${ICON.refresh}</button>` : ''}</div>
+      <div class="sub-h"><span>On the printer${files.list?.length && files.serial === p.serial ? ` · ${files.list.length}` : ''}</span>${p.files ? `<button type="button" class="ghost icon sm" data-act="files-refresh" title="Refresh the list" aria-label="Refresh the list">${ICON.refresh}</button>` : ''}</div>
       ${list}`;
+    if (scrolled) { const ul = el.querySelector('.files'); if (ul) ul.scrollTop = scrolled; }
   }
 
   async function loadFiles(force = false) {

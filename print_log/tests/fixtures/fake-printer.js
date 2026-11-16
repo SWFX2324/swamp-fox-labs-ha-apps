@@ -16,6 +16,7 @@
 //   no_code     no access code configured (no file features)
 //   no_ams      no AMS units, external spool only
 //   empty       no history at all
+//   many_files  a dozen more files on the printer (to scroll the list)
 //   ha_down     Home Assistant refuses the WebSocket connection
 // FAKE_WORLD_LOG=1 logs each request.
 
@@ -389,6 +390,10 @@ const printerFiles = new Map([
   ['/cache/Earbud_case_plate_1.gcode.3mf', { data: threeMf([{ index: 1, minutes: 55, filaments: [{ id: 1, type: 'PLA', color: '#00AE42', grams: 24 }] }]), mtime: DAYS(2) }],
   ['/notes.txt', { data: Buffer.from('not a print'), mtime: DAYS(9) }],
 ]);
+if (switches.has('many_files')) {
+  ['Cable_tidy_clips', 'Hex_bit_holder', 'Spool_holder_arm', 'Plant_label_stakes', 'Desk_grommet', 'Phone_dock', 'Hook_rail', 'Lid_knob', 'Tool_tray', 'Bin_dividers', 'Wall_bracket', 'Coaster']
+    .forEach((n, i) => printerFiles.set(`/${n}.gcode.3mf`, { data: threeMf([{ index: 1, minutes: 30 + i * 7, filaments: [{ id: 1, type: 'PLA', color: '#FFFFFF', grams: 10 + i }] }]), mtime: DAYS(3 + i) }));
+}
 const ftpLog = [];
 
 function listing(dir) {

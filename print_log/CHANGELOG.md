@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.3
+
+- **The camera shows when nothing is printing**, with the temperatures, the printer's
+  state and the last job. It refreshes every 30 seconds when idle and every 10 while
+  printing.
+- **"On the printer" shows the five most recent files** and scrolls for the rest (it
+  stopped at eight before). The list keeps its place when the page refreshes.
+
 ## 1.0.2
 
 - **The printer's files load.** The printer refused the file list with "session reuse

@@ -90,9 +90,10 @@ Restart the app after changing them.
 - **The print in progress:** a camera picture every 10 seconds, progress, layer, time
   left and when it'll finish, the nozzle, bed and chamber temperatures, and which slot
   is feeding. **Pause** and **Resume** act straight away; **Stop** asks first, because
-  it can't be undone. When nothing is printing, the card shows the printer's state and
-  the last job.
-- **Start a print:** the sliced `.3mf` files on the printer, newest first. **Start**
+  it can't be undone. When nothing is printing, the card still shows the camera (a
+  picture every 30 seconds), the temperatures, the printer's state and the last job.
+- **Start a print:** the sliced `.3mf` files on the printer, newest first: the five
+  most recent show, and the list scrolls for the rest. **Start**
   opens a dialog: pick the plate (with its picture), check the AMS slot for each
   filament (the app picks the closest material and colour and warns about a mismatch or
   a spool that's too low), and choose bed leveling, flow calibration and timelapse.
