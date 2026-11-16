@@ -37,7 +37,7 @@ function printers({ entities = [], devices = [], states = [] }) {
       if (!key) continue;
       const domain = e.entity_id.split('.')[0];
       // camera.* and switch.* share the "camera" key; keep them apart.
-      const k = domain === 'camera' ? 'camera_entity' : domain === 'button' ? `button_${key}` : key;
+      const k = domain === 'camera' ? 'camera_entity' : domain === 'button' ? `button_${key}` : domain === 'light' ? `light_${key}` : key;
       if (domain === 'switch' && key === 'camera') continue;
       if (!tk[k]) tk[k] = e.entity_id;
     }
@@ -388,6 +388,7 @@ function live(p, stateOf, current) {
     lanMode: s('developer_lan_mode') ? s('developer_lan_mode').state === 'on' : null,
     controlBlocked: s('hybrid_mode_blocks_control')?.state === 'on',
     buttons: { pause: btn('pause'), resume: btn('resume'), stop: btn('stop') },
+    light: p.ent.light_chamber_light ? { entity: p.ent.light_chamber_light, on: stateOf.get(p.ent.light_chamber_light)?.state === 'on', available: good(stateOf.get(p.ent.light_chamber_light)?.state ?? 'unavailable') } : null,
     ip: v('ip_address'),
   };
 }
@@ -403,6 +404,13 @@ function controlProblem(p, lv, action, { allowControls }) {
       : 'The printer doesn\'t accept commands from Home Assistant yet (its firmware asks for signed commands). Turn on Developer LAN mode on the printer.';
   }
   if (!b.available) return { pause: 'Only while printing.', resume: 'Only while paused.', stop: 'Only while printing or paused.' }[action];
+  return null;
+}
+
+function lightProblem(p, lv, { allowControls }) {
+  if (!allowControls) return 'Printer controls are off in the app\'s Configuration tab.';
+  if (!lv.light) return 'This printer has no chamber light in Home Assistant.';
+  if (!lv.online || !lv.light.available) return 'The printer is offline.';
   return null;
 }
 
@@ -488,5 +496,5 @@ function power(p, stateOf, { sensor = '' } = {}) {
 
 module.exports = {
   printers, units, spoolFromAttrs, jobsFromHistory, mergeJobs, rows, stats, runOut, live, costOf, priceFor,
-  controlProblem, startProblem, suggestMapping, amsMapping, power, heaterWatts, POWER, prettyName, trayEntities, localParts, DAY, HOUR, MIN,
+  controlProblem, lightProblem, startProblem, suggestMapping, amsMapping, power, heaterWatts, POWER, prettyName, trayEntities, localParts, DAY, HOUR, MIN,
 };

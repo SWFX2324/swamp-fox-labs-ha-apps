@@ -94,6 +94,7 @@ Restart the app after changing them.
   is feeding. **Pause** and **Resume** act straight away; **Stop** asks first, because
   it can't be undone. When nothing is printing, the card still shows the camera (a
   picture every 30 seconds), the temperatures, the printer's state and the last job.
+  The **Light** button on the camera turns the chamber light on and off.
 - **Start a print:** the sliced `.3mf` files on the printer, newest first: the five
   most recent show, and the list scrolls for the rest. **Start**
   opens a dialog: pick the plate (with its picture), check the AMS slot for each
@@ -168,9 +169,10 @@ Assistant's backups of the app.
 - The panel is for **administrators only**, so only administrators can pause, stop or
   start a print.
 - To Home Assistant the app sends only reads (states, registries, history) and exactly
-  two kinds of service call: `button.press` on the printer's own Pause, Resume or Stop
-  button, and `bambu_lab.print_project_file`. The app refuses any other message before
-  it leaves. With **Printer controls** off, it sends neither.
+  three kinds of service call: `button.press` on the printer's own Pause, Resume or Stop
+  button, `light.turn_on` and `light.turn_off` on the printer's own chamber light, and
+  `bambu_lab.print_project_file`. The app refuses any other message before it leaves.
+  With **Printer controls** off, it sends none of them.
 - Every action is checked against the printer's state when it arrives: stop only while
   printing or paused, start only when idle, and only with a file that's on the printer,
   a plate that's in it and loaded AMS slots.

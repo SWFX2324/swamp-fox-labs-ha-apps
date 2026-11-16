@@ -3,6 +3,7 @@
 //
 //   GET  api/state                    everything the page shows
 //   POST api/control   {printer, action: pause|resume|stop}
+//   POST api/light     {printer, on: true|false}   the chamber light
 //   GET  api/files?printer=           .3mf files on the printer
 //   GET  api/plan?printer=&path=      a file's plates and suggested AMS slots
 //   POST api/start     {printer, path, plate, mapping, …}
@@ -174,6 +175,11 @@ const server = http.createServer(async (req, res) => {
       if (!method('POST', 'application/json')) return;
       const b = await readJson(req);
       return send(res, 200, await log.control(String(b.printer || ''), String(b.action || '')));
+    }
+    if (route === '/api/light') {
+      if (!method('POST', 'application/json')) return;
+      const b = await readJson(req);
+      return send(res, 200, await log.light(String(b.printer || ''), b.on));
     }
     if (route === '/api/start') {
       if (!method('POST', 'application/json')) return;

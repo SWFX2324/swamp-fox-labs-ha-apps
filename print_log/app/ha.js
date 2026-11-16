@@ -4,7 +4,8 @@
 //
 //   - Core WebSocket API: states, the entity and device registries and Recorder
 //     history (reads), plus exactly two kinds of service call, both checked
-//     here: button.press on a printer's Pause, Resume or Stop button, and
+//     here: button.press on a printer's Pause, Resume or Stop button,
+//     light.turn_on and light.turn_off on its chamber light, and
 //     bambu_lab.print_project_file. Nothing else can be sent.
 //   - Core REST API: a camera snapshot of a printer's own camera.
 //
@@ -39,7 +40,7 @@ const ALLOWED = new Set([
   'get_states', 'get_config', 'config/entity_registry/list', 'config/device_registry/list',
   'history/history_during_period', 'call_service',
 ]);
-const SERVICES = new Set(['button.press', 'bambu_lab.print_project_file']);
+const SERVICES = new Set(['button.press', 'light.turn_on', 'light.turn_off', 'bambu_lab.print_project_file']);
 const ENTITY_ID = /^[a-z_]+\.[a-z0-9_]+$/;
 
 class HomeAssistant {
@@ -108,6 +109,10 @@ class HomeAssistant {
       if (name === 'button.press' && !(typeof payload.target?.entity_id === 'string' && ENTITY_ID.test(payload.target.entity_id) && payload.target.entity_id.startsWith('button.'))) {
         throw new HaError('Refused: button.press needs one button entity.');
       }
+      if (payload.domain === 'light' && !(typeof payload.target?.entity_id === 'string' && ENTITY_ID.test(payload.target.entity_id) && payload.target.entity_id.startsWith('light.'))) {
+        throw new HaError(`Refused: ${name} needs one light entity.`);
+      }
+      if (payload.domain === 'light' && payload.service_data !== undefined) throw new HaError(`Refused: ${name} takes no options here.`);
     }
     await this.connect();
     const id = this.nextId++;
@@ -142,6 +147,10 @@ class HomeAssistant {
 
   pressButton(entityId) {
     return this.call('call_service', { domain: 'button', service: 'press', target: { entity_id: entityId } });
+  }
+
+  setLight(entityId, on) {
+    return this.call('call_service', { domain: 'light', service: on ? 'turn_on' : 'turn_off', target: { entity_id: entityId } });
   }
 
   printProjectFile(deviceId, data) {

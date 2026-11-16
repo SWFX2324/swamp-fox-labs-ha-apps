@@ -64,6 +64,7 @@
   const ICON = {
     pause: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>',
     resume: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L8.5 4.64A1 1 0 0 0 7 5.5z"/></svg>',
+    light: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2V16h5v-.2c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3z"/></svg>',
     stop: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
     open: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
     cube: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg>',
@@ -161,7 +162,7 @@
       const sub = [p.name, lv.plate && `plate ${lv.plate}`, nozzleText, lv.plateType && nice(lv.plateType)].filter(Boolean).map(esc).join(' · ');
       const feed = lv.feeding ? `<span class="feeding" style="${sw(lv.feeding.color)}"><i></i>Feeding ${esc(lv.feeding.label)} · ${esc(lv.feeding.type || '')}${job?.grams ? ` · ${grams(job.grams)} of ${grams(lv.grams)}` : lv.grams ? ` · ${grams(lv.grams)} planned` : ''}</span>` : '';
       el.innerHTML = `<div class="live${lv.camera ? '' : ' no-cam'}">
-        ${lv.camera ? `${CAM_HTML}` : ''}
+        ${lv.camera ? camHtml(p) : ''}
         <div>
           <div class="top">
             <div><div class="job-nm">${esc(lv.name || 'Printing')}</div><div class="job-sub">${sub}</div></div>
@@ -192,7 +193,7 @@
     const pill = `<span class="pill ${statusPill[0]}">${statusPill[1]}</span>`;
     if (lv.camera && lv.online) {
       el.innerHTML = `<div class="live">
-        ${CAM_HTML}
+        ${camHtml(p)}
         <div>
           <div class="top"><div><div class="job-nm">${esc(p.name)}</div><div class="job-sub">${esc([p.model, p.firmware && `firmware ${p.firmware}`].filter(Boolean).join(' · '))}</div></div>${pill}</div>
           <div class="facts4">${temps}</div>
@@ -208,7 +209,13 @@
 
   // The picture stays hidden until the first snapshot arrives, so the browser
   // never draws a broken image with its alt text.
-  const CAM_HTML = '<div class="cam"><img id="cam-img" alt=""><div class="none">Loading camera…</div><span class="tag">Camera</span></div>';
+  function camHtml(p) {
+    const l = p.live.light, why = p.controls.light;
+    const btn = l && snap.settings.allowControls
+      ? `<button type="button" class="cam-light${l.on ? ' on' : ''}" data-act="light" data-on="${l.on ? 0 : 1}" aria-pressed="${l.on}" ${why ? `disabled title="${esc(why)}"` : `title="Turn the chamber light ${l.on ? 'off' : 'on'}"`}>${ICON.light}Light ${l.on ? 'on' : 'off'}</button>`
+      : '';
+    return `<div class="cam"><img id="cam-img" alt=""><div class="none">Loading camera…</div><span class="tag">Camera</span>${btn}</div>`;
+  }
   function keepCam(oldCam) {
     const newCam = $('cam-img');
     if (oldCam && newCam && oldCam.getAttribute('src')) { newCam.replaceWith(oldCam); oldCam.parentElement.querySelector('.none')?.remove(); }
@@ -560,6 +567,16 @@
       openModal(`<h3 id="modal-title">Stop this print?</h3><p>${esc(lv.name || 'The print')} is ${isNum(lv.progress) ? `${lv.progress}% done` : 'in progress'}. Stopping can't be undone; the job is logged as stopped.</p>
         <div class="err" id="stop-err" hidden></div>
         <div class="row"><button type="button" data-act="close" data-autofocus>Keep printing</button><button type="button" class="danger" data-act="stop-go">${ICON.stop}Stop print</button></div>`);
+      return;
+    }
+    if (act === 'light') {
+      const on = b.dataset.on === '1';
+      b.disabled = true;
+      try {
+        await post('api/light', { printer: p.serial, on });
+        toast(on ? 'Chamber light on' : 'Chamber light off');
+        setTimeout(() => { load(); camLoop(); }, 1500);
+      } catch (err) { b.disabled = false; toast(err.message, true); }
       return;
     }
     if (act === 'pause' || act === 'resume' || act === 'stop-go') {

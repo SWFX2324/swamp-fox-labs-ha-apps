@@ -278,6 +278,7 @@ class PrintLog {
         currentJob: current && lv.printing ? { ...current, cost: null } : null,
         controls: {
           pause: M.controlProblem(p, lv, 'pause', this), resume: M.controlProblem(p, lv, 'resume', this), stop: M.controlProblem(p, lv, 'stop', this),
+          light: M.lightProblem(p, lv, this),
           start: M.startProblem(p, lv, { allowControls: this.allowControls, filesReady }),
         },
         files: filesReady,
@@ -307,6 +308,20 @@ class PrintLog {
     await this.ha.pressButton(lv.buttons[action].entity);
     if (action === 'stop') { this.stops = [...this.stops, { serial: p.serial, t: this.now() }].slice(-50); this.save(); }
     delete this.cache.states;
+    return { ok: true };
+  }
+
+  async light(serial, on) {
+    if (typeof on !== 'boolean') throw new UserError('Say whether to turn the light on or off.');
+    const w = await this.world(0);
+    const p = this.printer(w, serial);
+    const lv = M.live(p, w.stateOf, this.current[p.serial]);
+    const problem = M.lightProblem(p, lv, this);
+    if (problem) throw new UserError(problem, 409);
+    console.log(`[print-log] chamber light ${on ? 'on' : 'off'} on ${p.name}`);
+    await this.ha.setLight(lv.light.entity, on);
+    delete this.cache.states;
+    this.camera.delete(p.serial);
     return { ok: true };
   }
 

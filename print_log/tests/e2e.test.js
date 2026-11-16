@@ -67,7 +67,7 @@ test('a print in progress: live card, spools, jobs from history, stats', async t
   assert.equal(p.live.progress, 40);
   assert.equal(p.live.feeding.label, 'A2');
   assert.equal(p.currentJob.name, 'Workbench pegboard hooks');
-  assert.deepEqual(p.controls, { pause: null, resume: 'Only while paused.', stop: null, start: 'Start unlocks when the printer is idle.' });
+  assert.deepEqual(p.controls, { pause: null, resume: 'Only while paused.', stop: null, light: null, start: 'Start unlocks when the printer is idle.' });
   assert.deepEqual(p.units.map(u => u.label), ['AMS 1', 'AMS HT', 'External spool']);
   const spools = p.units.flatMap(u => u.spools);
   assert.deepEqual(spools.map(x => x.label), ['A1', 'A2', 'A3', 'A4', 'HT', 'Ext']);
@@ -109,6 +109,21 @@ test('pause, resume and stop go to the printer\'s own buttons, and a stop is log
   assert.equal((await app.post('api/control', { printer: SERIAL, action: 'stop' })).status, 409, 'nothing to stop now');
   assert.equal((await app.post('api/control', { printer: SERIAL, action: 'reboot' })).status, 400);
   assert.match(app.log(), /\[print-log\] stop on Workshop H2D/);
+});
+
+test('the chamber light turns on and off through its own light entity', async t => {
+  const app = await start('');
+  t.after(app.stop);
+  let s = await app.state();
+  assert.deepEqual({ ...s.printers[0].live.light, entity: undefined }, { entity: undefined, on: false, available: true });
+  assert.equal((await app.post('api/light', { printer: SERIAL, on: true })).status, 200);
+  s = await app.state(x => x.printers?.[0].live.light?.on === true);
+  assert.equal(s.printers[0].live.light.on, true);
+  assert.equal((await app.post('api/light', { printer: SERIAL, on: false })).status, 200);
+  s = await app.state(x => x.printers?.[0].live.light?.on === false);
+  assert.equal(s.printers[0].live.light.on, false);
+  assert.equal((await app.post('api/light', { printer: SERIAL, on: 'yes' })).status, 400, 'on must be true or false');
+  assert.match(app.log(), /\[print-log\] chamber light on on Workshop H2D/);
 });
 
 test('files: list, plan, start, send a file, download', async t => {

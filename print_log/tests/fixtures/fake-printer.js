@@ -227,6 +227,7 @@ entity(printer, `binary_sensor.${P}_print_error`, 'print_error', 'off');
 entity(printer, `binary_sensor.${P}_developer_lan_mode`, 'developer_lan_mode', lan ? 'on' : 'off');
 entity(printer, `camera.${P}_camera`, 'camera', 'streaming');
 entity(printer, `switch.${P}_camera`, 'camera', 'on');
+entity(printer, `light.${P}_chamber_light`, 'chamber_light', switches.has('offline') ? 'unavailable' : 'off', { supported_color_modes: ['onoff'] });
 if (lan) {
   entity(printer, `button.${P}_pause_printing`, 'pause', status === 'running' ? 'unknown' : 'unavailable');
   entity(printer, `button.${P}_resume_printing`, 'resume', status === 'pause' ? 'unknown' : 'unavailable');
@@ -288,6 +289,13 @@ function callService(msg) {
     if (!next) return 'unknown button';
     setState(`sensor.${P}_print_status`, next);
     buttons(next);
+    return null;
+  }
+  if (name === 'light.turn_on' || name === 'light.turn_off') {
+    const id = msg.target?.entity_id;
+    if (id !== `light.${P}_chamber_light`) return 'unknown light';
+    if (st(id)?.state === 'unavailable') return 'Entity is unavailable';
+    setState(id, msg.service === 'turn_on' ? 'on' : 'off');
     return null;
   }
   if (name === 'bambu_lab.print_project_file') {

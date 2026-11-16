@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.6
+
+- **Chamber light switch on the camera**: turn the printer's chamber light on or off
+  from the camera card, so the picture isn't black. It uses the light the Bambu Lab
+  integration provides, and is hidden when **Printer controls** is off.
+
 ## 1.0.5
 
 - **No broken camera picture while it loads**: the camera card shows "Loading camera…"

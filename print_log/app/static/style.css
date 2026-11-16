@@ -86,6 +86,9 @@ select, input[type="text"] { font: inherit; font-size: 13px; color: var(--text);
 .cam img:not([src]) { visibility: hidden; }
 .cam .tag { position: absolute; top: 8px; left: 8px; font-size: 11px; font-weight: 700; color: #fff; background: rgba(0, 0, 0, .55); padding: 2px 7px; border-radius: 5px; display: flex; align-items: center; gap: 5px; }
 .cam .tag::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--critical); }
+.cam .cam-light { position: absolute; top: 6px; right: 6px; min-height: 30px; padding: 4px 10px; font-size: 12px; border-radius: 7px; color: #fff; background: rgba(0, 0, 0, .55); border-color: rgba(255, 255, 255, .18); }
+.cam .cam-light.on { color: #1f1d16; background: #f5d77a; border-color: #f5d77a; }
+.cam .cam-light svg { width: 14px; height: 14px; }
 .cam .none { position: absolute; inset: 0; display: grid; place-items: center; color: #8f8d85; font-size: 12px; }
 .live .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .live .job-nm { font-size: 18px; font-weight: 650; overflow-wrap: anywhere; }

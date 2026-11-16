@@ -25,7 +25,7 @@ The screenshots show a made-up printer and spools.
 
 - **The print in progress:** camera, progress and layer, time left, nozzle, bed and
   chamber temperatures, and which slot is feeding. **Pause**, **Resume** and
-  **Stop** (Stop asks first).
+  **Stop** (Stop asks first), and a chamber light switch on the camera.
 - **Start a print:** the sliced `.3mf` files on the printer. Pick a plate and the
   AMS slot for each filament (the app suggests the closest match by material and
   colour), then start it. Drop a new `.3mf` on the page to send it to the printer.
@@ -64,9 +64,9 @@ The [documentation](DOCS.md) covers setup, settings, troubleshooting and securit
 ## Safe by design
 
 - Only Home Assistant administrators can open the panel.
-- The app can call exactly two kinds of Home Assistant service: the printer's own
-  Pause, Resume and Stop buttons, and the Bambu Lab integration's "print a file"
-  action. Anything else is refused inside the app before it's sent.
+- The app can call exactly three kinds of Home Assistant service: the printer's own
+  Pause, Resume and Stop buttons, its chamber light, and the Bambu Lab integration's
+  "print a file" action. Anything else is refused inside the app before it's sent.
 - Every action is checked against the printer's state first. You can't stop what
   isn't printing, or start a file while the printer is busy.
 - It only sends `.3mf` files to the printer, only to its storage, and only talks to

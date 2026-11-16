@@ -214,6 +214,10 @@ test('Home Assistant client: only the allowed calls leave the app', async () => 
   await assert.rejects(ha.call('call_service', { domain: 'bambu_lab', service: 'send_command' }), /Refused to call bambu_lab.send_command/);
   await assert.rejects(ha.call('call_service', { domain: 'button', service: 'press', target: { entity_id: 'lock.front_door' } }), /needs one button/);
   await assert.rejects(ha.call('call_service', { domain: 'button', service: 'press', target: { entity_id: ['button.a', 'button.b'] } }), /needs one button/);
+  await assert.rejects(ha.call('call_service', { domain: 'light', service: 'turn_on', target: { entity_id: 'lock.front_door' } }), /needs one light/);
+  await assert.rejects(ha.call('call_service', { domain: 'light', service: 'turn_on', target: { entity_id: ['light.a', 'light.b'] } }), /needs one light/);
+  await assert.rejects(ha.call('call_service', { domain: 'light', service: 'toggle', target: { entity_id: 'light.a' } }), /Refused to call light.toggle/);
+  await assert.rejects(ha.call('call_service', { domain: 'light', service: 'turn_on', target: { entity_id: 'light.a' }, service_data: { flash: 'long' } }), /takes no options/);
   await assert.rejects(ha.call('config_entries/delete'), /Refused to send/);
   await assert.rejects(ha.cameraSnapshot('lock.front_door'), /not a camera/);
   await assert.rejects(ha.call('get_states'), /Can't reach Home Assistant/, 'an allowed read goes through to the connection');
