@@ -15,6 +15,8 @@ as soon as it's published, so the fix for a problem is to update.
 | Weather Observatory, older releases | No |
 | Station Health, latest release | Yes |
 | Station Health, older releases | No |
+| Print Log, latest release | Yes |
+| Print Log, older releases | No |
 
 ## Reporting a vulnerability
 
@@ -44,6 +46,13 @@ crediting you unless you'd rather not be named.
   console anything other than a sign-in and GET requests, exposing the Supervisor
   token or the UniFi password to the page, letting a network client's name run code
   in the page, or reaching it other than through ingress.
+- Print Log's server and page (`print_log/app`): for example making it call any
+  Home Assistant service other than a printer's own Pause, Resume and Stop buttons
+  and `bambu_lab.print_project_file`, pausing, stopping or starting a print
+  without going through Home Assistant's sign-in, exposing the Supervisor token or
+  the printer's access code to the page, writing outside the printer's storage or
+  sending it anything other than a .3mf, letting a file or job name run code in
+  the page, or reaching it other than through ingress.
 - The image and how it's built: the AppArmor profile, the Dockerfile, the GitHub
   Actions workflows and image signing.
 

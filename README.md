@@ -34,6 +34,7 @@ instead of building one on your machine.
 | <img src="adsb_tracker/icon.png" width="40"> | [ADS-B Tracker](adsb_tracker) | Find a flight by its number and follow it anywhere in the world on a live map, from public ADS-B data. |
 | <img src="weather_observatory/icon.png" width="40"> | [Weather Observatory](weather_observatory) | Your Home Assistant weather as a full-page station, with radar, NWS alerts, a nearby station and air quality. |
 | <img src="station_health/icon.png" width="40"> | [Station Health](station_health) | One view-only page for your hosts, containers, UniFi network and VLANs, backups and updates, with uptime and what happened. |
+| <img src="print_log/icon.png" width="40"> | [Print Log](print_log) | Every print your Bambu Lab printer makes, with filament per AMS slot, cost and spools running low. Pause, stop and start prints from Home Assistant. |
 
 Each app's page has screenshots and an overview, and its **Documentation**
 (`DOCS.md`, also on the app's **Documentation** tab in Home Assistant) covers setup,
@@ -66,6 +67,7 @@ node --test "ham_dashboard/tests/*.test.js"
 node --test "adsb_tracker/tests/*.test.js"
 node --test "weather_observatory/tests/*.test.js"
 node --test "station_health/tests/*.test.js"
+node --test "print_log/tests/*.test.js"
 ```
 
 ### Releases

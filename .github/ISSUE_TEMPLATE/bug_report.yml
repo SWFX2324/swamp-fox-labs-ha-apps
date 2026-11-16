@@ -11,6 +11,7 @@ body:
         - ADS-B Tracker
         - Weather Observatory
         - Station Health
+        - Print Log
     validations:
       required: true
   - type: markdown
@@ -46,6 +47,8 @@ body:
         (Settings → Apps → ADS-B Tracker) and the flight you searched, if you
         don't mind sharing it. Station Health: the app version and the panel
         that's wrong; leave out device, network and client names and addresses.
+        Print Log: the app version, your printer model and its firmware; never
+        paste the printer's access code.
       render: text
     validations:
       required: false

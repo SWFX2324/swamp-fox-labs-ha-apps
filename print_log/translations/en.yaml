@@ -1,0 +1,19 @@
+configuration:
+  allow_controls:
+    name: Printer controls
+    description: Shows Pause, Resume, Stop and Start on the page. Turn it off and the page only reads, like the other Swamp Fox Labs apps. The printer must accept commands from Home Assistant (Developer LAN mode on recent firmware).
+  printer_access_code:
+    name: Printer access code
+    description: Optional. The printer's LAN access code (on the printer's screen, under network settings). Lets the app list the files on the printer, send a .3mf to it, start a file and download one for Bambu Studio. It stays in the app and is never shown on the page.
+  printer_serial:
+    name: Printer serial number
+    description: Only if you have more than one Bambu Lab printer, the serial number of the one the access code belongs to. Leave empty for a single printer.
+  low_spool_grams:
+    name: Low spool warning (g)
+    description: A spool with less filament than this gets a heads-up. A spool that will run out within two weeks at your recent pace gets one too.
+  default_price_per_kg:
+    name: Default price per kg
+    description: Used for any material that isn't in the price list below.
+  filament_prices:
+    name: Filament prices
+    description: Price per kilogram for each material (the filament type the AMS reports, such as PLA, PETG or ASA). Used to work out what each print cost.

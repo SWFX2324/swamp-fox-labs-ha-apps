@@ -1,0 +1,46 @@
+name: Print Log
+version: "1.0.0"
+slug: print_log
+description: Every print your Bambu Lab printer makes, with filament per AMS slot, cost and spools running low. Pause, stop and start prints from Home Assistant.
+url: https://github.com/SWFX2324/swamp-fox-labs-ha-apps/tree/main/print_log
+image: ghcr.io/swfx2324/print-log-{arch}
+arch:
+  - aarch64
+  - amd64
+init: false
+ingress: true
+# Reads states, the entity and device registries and Recorder history over the
+# Core WebSocket API, and camera snapshots over the Core REST API. The only
+# services it calls are the printer's own Pause, Resume and Stop buttons and
+# bambu_lab.print_project_file, and only when "Printer controls" is on.
+homeassistant_api: true
+panel_icon: mdi:printer-3d
+panel_title: Print Log
+# panel_admin is left at its default (true): only administrators can open the
+# panel, so only administrators can pause, stop or start a print.
+options:
+  allow_controls: true
+  printer_access_code: ""
+  printer_serial: ""
+  low_spool_grams: 150
+  default_price_per_kg: 20
+  filament_prices:
+    - material: PLA
+      price_per_kg: 19.99
+    - material: PETG
+      price_per_kg: 19.99
+    - material: ABS
+      price_per_kg: 19.99
+    - material: ASA
+      price_per_kg: 24.99
+    - material: TPU
+      price_per_kg: 34.99
+schema:
+  allow_controls: bool
+  printer_access_code: "password?"
+  printer_serial: "match(^[A-Za-z0-9]{0,32}$)?"
+  low_spool_grams: "int(0,5000)"
+  default_price_per_kg: "float(0,1000)"
+  filament_prices:
+    - material: "match(^[A-Za-z0-9 +._-]{1,24}$)"
+      price_per_kg: "float(0,1000)"
