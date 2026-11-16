@@ -161,7 +161,7 @@
       const sub = [p.name, lv.plate && `plate ${lv.plate}`, nozzleText, lv.plateType && nice(lv.plateType)].filter(Boolean).map(esc).join(' · ');
       const feed = lv.feeding ? `<span class="feeding" style="${sw(lv.feeding.color)}"><i></i>Feeding ${esc(lv.feeding.label)} · ${esc(lv.feeding.type || '')}${job?.grams ? ` · ${grams(job.grams)} of ${grams(lv.grams)}` : lv.grams ? ` · ${grams(lv.grams)} planned` : ''}</span>` : '';
       el.innerHTML = `<div class="live${lv.camera ? '' : ' no-cam'}">
-        ${lv.camera ? `<div class="cam"><img id="cam-img" alt="Printer camera"><span class="tag">Camera</span></div>` : ''}
+        ${lv.camera ? `${CAM_HTML}` : ''}
         <div>
           <div class="top">
             <div><div class="job-nm">${esc(lv.name || 'Printing')}</div><div class="job-sub">${sub}</div></div>
@@ -178,8 +178,7 @@
           ${lv.hmsCount ? `<div class="why">The printer reports ${lv.hmsCount} message${lv.hmsCount > 1 ? 's' : ''} (HMS). Check its screen or the Bambu Handy app.</div>` : ''}
         </div>
       </div>`;
-      const newCam = $('cam-img');
-      if (oldCam && newCam && oldCam.src) newCam.replaceWith(oldCam);
+      keepCam(oldCam);
       if (!camRunning) camLoop();
       return;
     }
@@ -193,19 +192,26 @@
     const pill = `<span class="pill ${statusPill[0]}">${statusPill[1]}</span>`;
     if (lv.camera && lv.online) {
       el.innerHTML = `<div class="live">
-        <div class="cam"><img id="cam-img" alt="Printer camera"><span class="tag">Camera</span></div>
+        ${CAM_HTML}
         <div>
           <div class="top"><div><div class="job-nm">${esc(p.name)}</div><div class="job-sub">${esc([p.model, p.firmware && `firmware ${p.firmware}`].filter(Boolean).join(' · '))}</div></div>${pill}</div>
           <div class="facts4">${temps}</div>
           <div class="idle-facts">${facts}</div>
         </div>
       </div>`;
-      const newCam = $('cam-img');
-      if (oldCam && newCam && oldCam.src) newCam.replaceWith(oldCam);
+      keepCam(oldCam);
       if (!camRunning) camLoop();
       return;
     }
     el.innerHTML = `<div class="idle-row">${pill}<div class="big">${esc(p.name)}</div><div class="facts">${facts}</div></div>`;
+  }
+
+  // The picture stays hidden until the first snapshot arrives, so the browser
+  // never draws a broken image with its alt text.
+  const CAM_HTML = '<div class="cam"><img id="cam-img" alt=""><div class="none">Loading camera…</div><span class="tag">Camera</span></div>';
+  function keepCam(oldCam) {
+    const newCam = $('cam-img');
+    if (oldCam && newCam && oldCam.getAttribute('src')) { newCam.replaceWith(oldCam); oldCam.parentElement.querySelector('.none')?.remove(); }
   }
 
   // Camera: a fresh snapshot every 10 s while printing (30 s otherwise),
@@ -219,8 +225,8 @@
     const url = `api/camera?${q(p)}&t=${Date.now()}`;
     const pre = new Image();
     const next = () => { camTimer = setTimeout(camLoop, p.live.printing ? 10_000 : 30_000); };
-    pre.onload = () => { const cur = $('cam-img'); if (cur) { cur.src = url; cur.parentElement.querySelector('.none')?.remove(); } next(); };
-    pre.onerror = () => { const cam = $('cam-img')?.parentElement; if (cam && !cam.querySelector('.none')) cam.insertAdjacentHTML('beforeend', '<div class="none">No camera picture</div>'); next(); };
+    pre.onload = () => { const cur = $('cam-img'); if (cur) { cur.src = url; cur.alt = 'Printer camera'; cur.parentElement.querySelector('.none')?.remove(); } next(); };
+    pre.onerror = () => { const cur = $('cam-img'); const cam = cur?.parentElement; if (cam && !cur.getAttribute('src')) { cam.querySelector('.none')?.remove(); cam.insertAdjacentHTML('beforeend', '<div class="none">No camera picture</div>'); } next(); };
     pre.src = url;
   }
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.5
+
+- **No broken camera picture while it loads**: the camera card shows "Loading camera…"
+  until the first picture arrives, instead of a broken image icon and its label.
+
 ## 1.0.4
 
 - **Energy card** in place of "Failed and stopped prints": the printer's power right
