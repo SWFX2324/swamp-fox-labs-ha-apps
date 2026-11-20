@@ -10,8 +10,13 @@
 // Each returns { server, port, received, sockets, push(...) } so tests can see
 // what the app sent and inject traffic.
 
+const fs = require('fs');
 const net = require('net');
-const { encode, field, decode } = require('../../app/protobuf');
+const path = require('path');
+// In the repository the app is at ../../app; in the container smoke test the
+// tests are mounted inside the app folder (/app/tests), so it's at ../..
+const APP = fs.existsSync(path.join(__dirname, '../../app/protobuf.js')) ? '../../app' : '../..';
+const { encode, field, decode } = require(`${APP}/protobuf`);
 
 const HOME = { lat: 34.0007, lon: -81.0348 };
 
