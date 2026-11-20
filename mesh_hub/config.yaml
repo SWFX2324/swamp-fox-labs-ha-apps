@@ -1,0 +1,34 @@
+name: Mesh Hub
+version: "1.0.0"
+slug: mesh_hub
+description: Meshtastic and MeshCore on one page. Connects to your nodes over Wi-Fi for nodes, a map and messages, and adds public nodes near you from the community maps.
+url: https://github.com/SWFX2324/swamp-fox-labs-ha-apps/tree/main/mesh_hub
+image: ghcr.io/swfx2324/mesh-hub-{arch}
+arch:
+  - aarch64
+  - amd64
+init: false
+ingress: true
+# Reads one thing from Home Assistant: its home location (GET /api/config), to
+# centre the map and pick the public nodes nearby. Calls no services.
+homeassistant_api: true
+panel_icon: mdi:access-point-network
+panel_title: Mesh
+# panel_admin is left at its default (true): only administrators can open the
+# panel, since it can send messages from your radios.
+options:
+  meshtastic_host: ""
+  meshtastic_port: 4403
+  meshcore_host: ""
+  meshcore_port: 5000
+  allow_sending: true
+  public_maps: true
+  map_radius_km: 100
+schema:
+  meshtastic_host: 'match(^[A-Za-z0-9.:\[\]-]{0,253}$)?'
+  meshtastic_port: port
+  meshcore_host: 'match(^[A-Za-z0-9.:\[\]-]{0,253}$)?'
+  meshcore_port: port
+  allow_sending: bool
+  public_maps: bool
+  map_radius_km: "int(10,500)"

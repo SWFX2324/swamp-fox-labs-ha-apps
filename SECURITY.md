@@ -17,6 +17,8 @@ as soon as it's published, so the fix for a problem is to update.
 | Station Health, older releases | No |
 | Print Log, latest release | Yes |
 | Print Log, older releases | No |
+| Mesh Hub, latest release | Yes |
+| Mesh Hub, older releases | No |
 
 ## Reporting a vulnerability
 
@@ -53,6 +55,11 @@ crediting you unless you'd rather not be named.
   the printer's access code to the page, writing outside the printer's storage or
   sending it anything other than a .3mf, letting a file or job name run code in
   the page, or reaching it other than through ingress.
+- Mesh Hub's server and page (`mesh_hub/app`): for example sending a message
+  without going through Home Assistant's sign-in (or with sending turned off),
+  making it connect anywhere other than the radio addresses you set and its two
+  public maps, exposing the Supervisor token to the page, letting a node name or
+  message text run code in the page, or reaching it other than through ingress.
 - The image and how it's built: the AppArmor profile, the Dockerfile, the GitHub
   Actions workflows and image signing.
 

@@ -48,3 +48,10 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
+
+  - package-ecosystem: docker
+    directory: /mesh_hub
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7

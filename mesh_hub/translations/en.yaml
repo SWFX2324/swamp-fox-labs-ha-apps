@@ -1,0 +1,22 @@
+configuration:
+  meshtastic_host:
+    name: Meshtastic node address
+    description: The IP address or host name of your Meshtastic node on your network, for example 192.168.1.50. The node needs Wi-Fi or Ethernet turned on (its network API listens on port 4403). Leave empty if you don't have one.
+  meshtastic_port:
+    name: Meshtastic port
+    description: The node's API port. 4403 unless you changed it.
+  meshcore_host:
+    name: MeshCore radio address
+    description: The IP address or host name of your MeshCore companion radio running Wi-Fi companion firmware. Leave empty if you don't have one.
+  meshcore_port:
+    name: MeshCore port
+    description: The radio's TCP port. 5000 unless the firmware was built with another.
+  allow_sending:
+    name: Sending messages
+    description: Lets the page send messages on your channels and to other nodes. Turn it off and the page only reads.
+  public_maps:
+    name: Public map nodes
+    description: Adds nodes near your Home Assistant home from meshmap.net (Meshtastic) and the MeshCore map. Your location isn't sent anywhere; the app downloads the public lists and keeps the nearby ones.
+  map_radius_km:
+    name: Public map radius (km)
+    description: How far from your home to show public nodes.

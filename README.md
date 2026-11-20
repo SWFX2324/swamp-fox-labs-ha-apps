@@ -35,6 +35,7 @@ instead of building one on your machine.
 | <img src="weather_observatory/icon.png" width="40"> | [Weather Observatory](weather_observatory) | Your Home Assistant weather as a full-page station, with radar, NWS alerts, a nearby station and air quality. |
 | <img src="station_health/icon.png" width="40"> | [Station Health](station_health) | One view-only page for your hosts, containers, UniFi network and VLANs, backups and updates, with uptime and what happened. |
 | <img src="print_log/icon.png" width="40"> | [Print Log](print_log) | Every print your Bambu Lab printer makes, with filament per AMS slot, cost and spools running low. Pause, stop and start prints from Home Assistant. |
+| <img src="mesh_hub/icon.png" width="40"> | [Mesh Hub](mesh_hub) | Meshtastic and MeshCore on one page: your nodes over Wi-Fi, a map, a node list and messages, plus public nodes near you. |
 
 Each app's page has screenshots and an overview, and its **Documentation**
 (`DOCS.md`, also on the app's **Documentation** tab in Home Assistant) covers setup,
@@ -68,6 +69,7 @@ node --test "adsb_tracker/tests/*.test.js"
 node --test "weather_observatory/tests/*.test.js"
 node --test "station_health/tests/*.test.js"
 node --test "print_log/tests/*.test.js"
+node --test "mesh_hub/tests/*.test.js"
 ```
 
 ### Releases

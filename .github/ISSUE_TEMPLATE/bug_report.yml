@@ -12,6 +12,7 @@ body:
         - Weather Observatory
         - Station Health
         - Print Log
+        - Mesh Hub
     validations:
       required: true
   - type: markdown
@@ -48,7 +49,9 @@ body:
         don't mind sharing it. Station Health: the app version and the panel
         that's wrong; leave out device, network and client names and addresses.
         Print Log: the app version, your printer model and its firmware; never
-        paste the printer's access code.
+        paste the printer's access code. Mesh Hub: the app version, which radio
+        (Meshtastic or MeshCore), its board and firmware; leave out node names and
+        message text you'd rather keep private.
       render: text
     validations:
       required: false

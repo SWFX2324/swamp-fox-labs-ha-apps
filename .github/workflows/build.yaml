@@ -19,6 +19,7 @@ on:
       - weather_observatory/**
       - station_health/**
       - print_log/**
+      - mesh_hub/**
       - .github/workflows/build.yaml
   pull_request:
     paths:
@@ -27,6 +28,7 @@ on:
       - weather_observatory/**
       - station_health/**
       - print_log/**
+      - mesh_hub/**
       - .github/workflows/build.yaml
   workflow_dispatch:
 
@@ -51,7 +53,7 @@ jobs:
           BEFORE: ${{ github.event.before }}
           BASE: ${{ github.event.pull_request.base.sha }}
         run: |
-          all="ham_dashboard adsb_tracker weather_observatory station_health print_log"
+          all="ham_dashboard adsb_tracker weather_observatory station_health print_log mesh_hub"
           if [ "$EVENT" = workflow_dispatch ]; then
             changed="$all"
           else

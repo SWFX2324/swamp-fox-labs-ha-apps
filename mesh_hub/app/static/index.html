@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mesh Hub</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="lib/leaflet/leaflet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-banner" id="offline" role="alert" hidden>Can’t reach the Mesh Hub app. It may be restarting; retrying…</div>
+
+  <header class="topbar">
+    <div class="brand">
+      <img class="brand-icon" src="favicon.svg" alt="" width="30" height="30">
+      <div>
+        <h1>Mesh Hub</h1>
+        <p class="subtitle">Meshtastic and MeshCore on one page · your radios plus public maps</p>
+      </div>
+    </div>
+    <span id="badge-meshtastic" class="badge" data-net="meshtastic" data-state="off" role="status">Meshtastic</span>
+    <span id="badge-meshcore" class="badge" data-net="meshcore" data-state="off" role="status">MeshCore</span>
+    <button id="theme" type="button" class="ghost icon" aria-label="Appearance: automatic" title="Appearance: automatic">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20m0 18V4a8 8 0 0 1 0 16"/></svg>
+    </button>
+  </header>
+
+  <nav class="tabs" aria-label="Network">
+    <div class="seg" role="tablist">
+      <button type="button" role="tab" data-tab="all" aria-selected="true">All</button>
+      <button type="button" role="tab" data-tab="meshtastic" aria-selected="false"><i class="dot" data-net="meshtastic"></i>Meshtastic</button>
+      <button type="button" role="tab" data-tab="meshcore" aria-selected="false"><i class="dot" data-net="meshcore"></i>MeshCore</button>
+    </div>
+    <div id="summary" class="summary muted"></div>
+  </nav>
+  <div id="status" class="status" role="status" aria-live="polite"></div>
+
+  <main class="workspace">
+    <div class="main-col">
+      <section class="mapcard" aria-label="Map of nodes">
+        <div class="maptools">
+          <span id="mapinfo" class="region">Nodes</span>
+          <button id="public" type="button" class="toggle" aria-pressed="true">Public nodes</button>
+          <button id="fit" type="button" class="ghost small" title="Show every node">Fit all</button>
+        </div>
+        <div class="mapwrap">
+          <div id="map" class="map" aria-label="Node positions"></div>
+          <div class="legend" aria-label="Legend">
+            <span><i class="lg" data-net="meshtastic"></i>Meshtastic</span>
+            <span><i class="lg" data-net="meshcore"></i>MeshCore</span>
+            <span><i class="lg hollow"></i>Public map</span>
+            <span><i class="lg self"></i>Your radio</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card nodes" aria-labelledby="nodesTitle">
+        <div class="card-head">
+          <h2 id="nodesTitle" class="card-label">Nodes</h2>
+          <span id="nodeCounts" class="muted"></span>
+        </div>
+        <div class="node-tools">
+          <label class="visually-hidden" for="filter">Filter nodes</label>
+          <input id="filter" type="search" placeholder="Filter by name, ID, type or hardware…" spellcheck="false">
+          <label class="visually-hidden" for="scope">Which nodes</label>
+          <select id="scope">
+            <option value="radio">Heard by my radios</option>
+            <option value="all">Radios + public maps</option>
+            <option value="web">Public maps only</option>
+          </select>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead><tr>
+              <th scope="col" data-sort="name">Node</th>
+              <th scope="col" data-sort="kind" class="hide-sm">Type</th>
+              <th scope="col" data-sort="hops" class="num">Hops</th>
+              <th scope="col" data-sort="snr" class="num hide-sm">SNR</th>
+              <th scope="col" data-sort="battery" class="num">Batt</th>
+              <th scope="col" data-sort="distance" class="num hide-sm">km</th>
+              <th scope="col" data-sort="lastHeard" class="num">Heard</th>
+            </tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+          <p id="empty" class="empty"></p>
+        </div>
+      </section>
+    </div>
+
+    <aside class="side">
+      <section class="card radios" aria-labelledby="radiosTitle">
+        <h2 id="radiosTitle" class="card-label">Your radios</h2>
+        <div id="radios"></div>
+      </section>
+
+      <section class="card chat" aria-labelledby="chatTitle">
+        <div class="card-head">
+          <h2 id="chatTitle" class="card-label">Messages</h2>
+          <span id="chatNet" class="muted"></span>
+        </div>
+        <div id="chats" class="chats" role="tablist" aria-label="Channels and direct messages"></div>
+        <div id="log" class="log" aria-live="polite"></div>
+        <form id="composer" class="composer" autocomplete="off">
+          <label class="visually-hidden" for="text">Message</label>
+          <textarea id="text" rows="2" placeholder="Message" enterkeyhint="send"></textarea>
+          <div class="composer-row">
+            <span id="count" class="muted"></span>
+            <button id="sendBtn" type="submit" class="primary">Send</button>
+          </div>
+        </form>
+      </section>
+
+      <details class="card help" id="help">
+        <summary>How Mesh Hub works</summary>
+        <ul>
+          <li><b>Your radios</b> connect over your network: a Meshtastic node with Wi-Fi or Ethernet (port 4403) and a MeshCore companion radio running Wi-Fi firmware (port 5000). Set their addresses on the app’s Configuration tab.</li>
+          <li>The two networks can’t hear each other. Each tab shows one of them; <b>All</b> shows both, coloured green for Meshtastic and blue for MeshCore.</li>
+          <li><b>Public nodes</b> come from meshmap.net (Meshtastic, via the public MQTT server) and the MeshCore map, within the radius you set around your Home Assistant home. They’re hollow on the map.</li>
+          <li>Messages are kept in the app (the newest 1,000 per network), so they’re here when you come back. A tick means a node passed your message on; two mean the recipient confirmed it.</li>
+          <li>A Meshtastic node takes one Wi-Fi app connection at a time. If the phone app connects over Wi-Fi it can push Mesh Hub off; over Bluetooth both work at once.</li>
+        </ul>
+      </details>
+    </aside>
+  </main>
+
+  <footer>
+    Public Meshtastic nodes from <a href="https://meshmap.net" target="_blank" rel="noopener noreferrer">meshmap.net</a> ·
+    public MeshCore nodes from the <a href="https://map.meshcore.io" target="_blank" rel="noopener noreferrer">MeshCore map</a> ·
+    Map © <a href="https://www.esri.com/" target="_blank" rel="noopener noreferrer">Esri</a> ·
+    <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a>
+  </footer>
+
+  <script src="lib/leaflet/leaflet.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
