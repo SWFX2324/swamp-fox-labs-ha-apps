@@ -1,5 +1,5 @@
 name: Mesh Hub
-version: "1.0.0"
+version: "1.0.1"
 slug: mesh_hub
 description: Meshtastic and MeshCore on one page. Connects to your nodes over Wi-Fi for nodes, a map and messages, and adds public nodes near you from the community maps.
 url: https://github.com/SWFX2324/swamp-fox-labs-ha-apps/tree/main/mesh_hub

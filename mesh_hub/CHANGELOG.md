@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+- **A bigger map:** it now takes the full width of the page and more of its height.
+  The node list and the radios and messages sit side by side underneath it.
+
 ## 1.0.0
 
 - First release: a Meshtastic node and a MeshCore companion radio over Wi-Fi (TCP) on

@@ -136,13 +136,22 @@ button svg { width: 18px; height: 18px; display: block; }
 .status p + p { margin-top: 4px; }
 
 /* ---- workspace ---- */
-.workspace { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 14px; padding: 0 20px 14px; align-items: start; }
-.main-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+/* The map gets the full width; the node list and the radios and messages sit
+   side by side underneath it. */
+.workspace {
+  flex: 1; display: grid; gap: 14px; padding: 0 20px 14px; align-items: start;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  grid-template-areas: "map map" "nodes side";
+}
+.main-col { display: contents; }
+.mapcard { grid-area: map; }
+.nodes { grid-area: nodes; min-width: 0; }
+.side { grid-area: side; }
 .mapcard, .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); }
 .mapcard { display: flex; flex-direction: column; overflow: hidden; }
 .maptools { display: flex; align-items: center; gap: 8px; padding: 10px 12px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
 .region { flex: 1; min-width: 160px; font-size: 13px; font-weight: 600; color: var(--text-2); }
-.mapwrap { position: relative; height: 52vh; min-height: 340px; }
+.mapwrap { position: relative; height: 62vh; min-height: 420px; }
 .map { position: absolute; inset: 0; background: var(--card-2); z-index: 0; }
 .leaflet-tile-pane { filter: var(--tiles); }
 .leaflet-container { font: inherit; background: var(--card-2); }
@@ -169,7 +178,7 @@ button svg { width: 18px; height: 18px; display: block; }
 .pop .pop-actions button { min-height: 32px; padding: 4px 12px; font-size: 13px; }
 
 /* ---- cards ---- */
-.side { display: flex; flex-direction: column; gap: 14px; min-width: 0; position: sticky; top: 10px; }
+.side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .card { padding: 16px; }
 .card-label { font-size: 12px; font-weight: 650; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 10px; }
 .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
@@ -255,8 +264,8 @@ footer { padding: 2px 20px 16px; text-align: center; font-size: 11px; color: var
 
 /* ---- smaller screens ---- */
 @media (max-width: 1080px) {
-  .workspace { grid-template-columns: 1fr; }
-  .side { position: static; display: grid; grid-template-columns: 1fr 1fr; align-items: start; }
+  .workspace { grid-template-columns: 1fr; grid-template-areas: "map" "side" "nodes"; }
+  .side { display: grid; grid-template-columns: 1fr 1fr; align-items: start; }
   .side .chat { grid-column: 2; grid-row: 1 / span 2; }
 }
 @media (max-width: 760px) {
