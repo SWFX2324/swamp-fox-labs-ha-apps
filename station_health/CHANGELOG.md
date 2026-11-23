@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.6
+
+- **Updates are a vertical list.** Under each heading, every group has its own line
+  with how many items it covers and whether it's current, has updates waiting, or has
+  no data.
+
 ## 1.0.5
 
 - **Updates are sorted into rows:** Home Assistant, Devices, Network & storage and

@@ -282,7 +282,11 @@
         <ul class="pending">${u.pending.map(p => `<li><span>${esc(p.title)} <span class="muted">· ${esc(p.group)}</span></span><span>${esc(p.installed || '')}${p.latest ? ` → ${esc(p.latest)}` : ''}</span></li>`).join('')}</ul>`
         : `<div class="meta">Everything is current.</div>`}
       <div class="updsecs">${[...new Set(u.groups.map(g => g.section || 'Devices'))].map(sec => `<div class="updsec-name">${esc(sec)}</div>
-        <div class="updlist">${u.groups.filter(g => (g.section || 'Devices') === sec).map(g => `<span title="${esc(`${g.total} item${g.total === 1 ? '' : 's'}${g.pending ? `, ${g.pending} waiting` : ''}`)}">${pill(g.pending ? 'warn' : g.unknown === g.total ? 'off' : 'ok', `${g.name}${g.pending ? ` · ${g.pending}` : ''}`)}</span>`).join('')}</div>`).join('')}</div>
+        <ul class="updrows">${u.groups.filter(g => (g.section || 'Devices') === sec).map(g => {
+          const level = g.pending ? 'warn' : g.unknown === g.total ? 'off' : 'ok';
+          const status = g.pending ? `${g.pending} waiting` : level === 'off' ? 'No data' : 'Current';
+          return `<li><span class="pill ${level} dot" aria-hidden="true"></span><span class="nm">${esc(g.name)}</span><span class="ct">${g.total}</span><span class="st ${level}">${esc(status)}</span></li>`;
+        }).join('')}</ul>`).join('')}</div>
       <p class="note"><a href="/config/updates" target="_top">Open Updates in Home Assistant</a></p>`;
   }
 
