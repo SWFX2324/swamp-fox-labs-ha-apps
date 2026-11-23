@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.8
+
+- **A NAS that goes quiet says what to do.** When the Synology NAS stops reporting
+  while Home Assistant's Synology DSM integration still says it's loaded (it doesn't
+  always reconnect after a NAS restart), the NAS card says to reload that integration,
+  with a link straight to it. Before, it only said "Not reporting".
+
 ## 1.0.7
 
 - **Mark a device as stored.** An offline UniFi device now has a **Mark stored** button.

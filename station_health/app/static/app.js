@@ -235,7 +235,7 @@
         return `<div class="host">
           <span class="name">${esc(h.name)} <small>${esc(h.sub)}</small></span>${st}
           ${metrics.length ? `<div class="bars">${metrics.map(m => `<div class="bar"><div class="l"><span>${esc(m.label)}</span><span class="mono">${esc(m.value)}${esc(m.unit === '%' ? '%' : ` ${m.unit}`)}</span></div>${m.pct !== null ? `<div class="t"><i class="${m.pct >= 85 ? 'hot' : ''}" style="width:${Math.max(1, m.pct)}%"></i></div>` : ''}</div>`).join('')}</div>` : ''}
-          ${h.note ? `<div class="why">${esc(h.note)}</div>` : ''}
+          ${h.note ? `<div class="why">${esc(h.note)}${h.fix && /^\/config\/[a-z0-9_/]+$/.test(h.fix.href) ? ` <a href="${esc(h.fix.href)}" target="_top">${esc(h.fix.label)}</a>` : ''}</div>` : ''}
         </div>`;
       }).join('')}</div>` : empty('No hosts found.')}
       ${srcError('supervisor')}`;

@@ -54,6 +54,7 @@ test('everything loads through the ingress prefix', async t => {
   assert.equal(s.summary.level, 'ok', JSON.stringify(s.summary));
   assert.equal(s.summary.headline, 'Everything is normal');
   assert.deepEqual(s.hosts.map(h => h.name), ['Home Assistant', 'NAS', 'Desk PC']);
+  assert.equal(s.hosts.find(h => h.kind === 'nas').fix, null, 'a working NAS offers no fix');
   assert.equal(s.containers.total, 11);
   assert.equal(s.containers.running, 11);
   assert.equal(s.network.source, 'api');
@@ -85,6 +86,17 @@ test('problems show up in the summary', async t => {
   assert.match(text, /last automatic backup failed/);
   assert.doesNotMatch(text, /system_bridge/, 'the failing System Bridge entry is the PC problem, not listed twice');
   assert.ok(s.incidents.some(i => i.subject === 'Syncthing' && i.ongoing));
+});
+
+test('a NAS that goes quiet while its integration is loaded suggests a reload', async t => {
+  const app = await start('nas_silent');
+  t.after(app.stop);
+  const s = await app.state();
+  const nas = s.hosts.find(h => h.kind === 'nas');
+  assert.equal(nas.state, 'down');
+  assert.match(nas.note, /integration says it's loaded.*reload that integration/);
+  assert.deepEqual(nas.fix, { label: 'Reload it in Home Assistant', href: '/config/integrations/integration/synology_dsm' });
+  assert.match(s.summary.needs.map(n => n.text).join('\n'), /NAS: Not reporting/);
 });
 
 test('a device marked stored is not an alert; the mark is kept and can be undone', async t => {

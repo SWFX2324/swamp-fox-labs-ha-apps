@@ -169,10 +169,13 @@ function synologyHosts(ix, entryState) {
         metric('Temp', round(numState(temp), 1), temp?.attributes?.unit_of_measurement || '°', null),
       ],
       disks: statuses,
-      note: !up ? (entry && entry !== 'loaded' ? `Home Assistant can't reach it (integration: ${entry.replace(/_/g, ' ')}).` : 'Not reporting.')
+      // Loaded but silent is usually a session lost in a NAS restart: a reload fixes it.
+      note: !up ? (entry && entry !== 'loaded' ? `Home Assistant can't reach it (integration: ${entry.replace(/_/g, ' ')}).`
+        : "Not reporting, though Home Assistant's Synology DSM integration says it's loaded. If the NAS is on, reload that integration; it doesn't always reconnect after a NAS restart.")
         : badDisks.length ? `${badDisks.map(s => `${s.name}: ${s.state.replace(/_/g, ' ')}`).join(', ')}.`
           : volUsed !== null && volUsed >= 90 ? `Volume is ${volUsed}% full.` : null,
       trackEntity: cpuS?.entity_id || ix.entityOf(d.id, /_cpu_utilization_total$/),
+      fix: !up ? { label: entry && entry !== 'loaded' ? 'Open Synology DSM in Home Assistant' : 'Reload it in Home Assistant', href: '/config/integrations/integration/synology_dsm' } : null,
     });
   }
   return out;

@@ -11,6 +11,7 @@
 // FAKE_WORLD can hold several comma-separated switches:
 //   ha_down        Home Assistant refuses the WebSocket connection
 //   pc_off         the PC's System Bridge sensors are unavailable (40 min)
+//   nas_silent     the NAS sensors are unavailable while its integration says loaded
 //   container_down the "syncthing" container has exited
 //   ap_down        the "Garage AP" is disconnected
 //   wan_down       the UniFi console reports the WAN down
@@ -85,9 +86,10 @@ for (const [name, mem, cpu] of containerList) {
 
 // Synology NAS with a volume and two drives.
 const nas = device('NAS', 'DS923+', 'synology_dsm');
-entity(nas, 'sensor.nas_cpu_utilization_total', 14, { unit_of_measurement: '%' });
-entity(nas, 'sensor.nas_memory_usage_real', 38, { unit_of_measurement: '%' });
-entity(nas, 'sensor.nas_temperature', 104, { unit_of_measurement: '°F' });
+const nasVal = v => (switches.has('nas_silent') ? 'unavailable' : v);
+entity(nas, 'sensor.nas_cpu_utilization_total', nasVal(14), { unit_of_measurement: '%' });
+entity(nas, 'sensor.nas_memory_usage_real', nasVal(38), { unit_of_measurement: '%' });
+entity(nas, 'sensor.nas_temperature', nasVal(104), { unit_of_measurement: '°F' });
 entity(nas, 'update.nas_dsm_update', 'off', { installed_version: '7.3.1', latest_version: '7.3.1', friendly_name: 'NAS DSM update' });
 const vol = device('NAS (Volume 1)', 'DS923+', 'synology_dsm', { via_device_id: nas.id });
 entity(vol, 'sensor.nas_volume_1_status', 'normal');
