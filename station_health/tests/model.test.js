@@ -199,6 +199,36 @@ test('updates: grouped by where they come from; disabled entities left out', () 
   assert.deepEqual(u.groups.map(g => [g.name, g.section]), [['Home Assistant', 'Home Assistant'], ['Container images', 'Containers']]);
 });
 
+test('stored: a stored device clears itself once it reconnects; bad saved files are ignored', () => {
+  const fs = require('fs'), os = require('os'), path = require('path');
+  const { Station } = require('../app/station');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sh-st-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'stored.json'), JSON.stringify([{ name: 'Rear AP', since: 5 }, { name: 42 }, null, { name: 'y'.repeat(200) }]));
+    const st = new Station({ ha: {}, dataDir: dir, now: () => NOW });
+    assert.deepEqual([...st.stored.keys()], ['Rear AP']);
+    const snap = state => ({ network: { devices: [{ name: 'Rear AP', state }, { name: 'Office AP', state: 'connected' }] } });
+    const down = snap('disconnected');
+    st.applyStored(down);
+    assert.equal(down.network.devices[0].stored, true);
+    assert.equal(down.network.devices[0].storedSince, 5);
+    assert.equal(down.network.devices[1].stored, undefined);
+    const back = snap('connected');
+    st.applyStored(back);
+    assert.equal(back.network.devices[0].stored, undefined);
+    assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, 'stored.json'), 'utf8')), []);
+    fs.writeFileSync(path.join(dir, 'stored.json'), '{not json');
+    assert.equal(new Station({ ha: {}, dataDir: dir }).stored.size, 0);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('summary: a stored device is not an alert', () => {
+  const s = { hosts: [], containers: { list: [] }, network: { wan: null, devices: [{ name: 'Rear AP', state: 'disconnected', level: 'warn', stored: true }] }, backups: null, integrations: [], unifiError: null };
+  assert.equal(M.summary(s, NOW).headline, 'Everything is normal');
+  s.network.devices[0].stored = false;
+  assert.equal(M.summary(s, NOW).headline, '1 Alert');
+});
+
 test('updates: sections in a fixed order, HACS and unknown devices placed', () => {
   const ids = [['update.home_assistant_core_update', 'hassio'], ['update.samba_update', 'hassio'], ['update.bambu_lab', 'marketplace'], ['update.pi_firmware', 'raspberry_pi'], ['update.gw_firmware', 'unifi'], ['update.nas_update', 'synology_dsm'], ['update.x_image_update_available', 'portainer'], ['update.printer', 'some_vendor']];
   const entities = ids.map(([e, p]) => ent(e, p));

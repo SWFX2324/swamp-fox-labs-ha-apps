@@ -5,7 +5,8 @@
 // goes through esc().
 //
 // All URLs are relative, so the page works under Home Assistant's ingress
-// prefix. View only: the page has no control that changes anything.
+// prefix. View only: no control changes a device. The one write is the page's
+// own "stored" mark for a UniFi device that's packed away (api/stored).
 
 (() => {
   const $ = id => document.getElementById(id);
@@ -96,8 +97,9 @@
     tiles.push({ c: hostsUp === snap.hosts.length ? 'ok' : 'warn', label: 'Hosts reporting', value: `${hostsUp}`, unit: `/ ${snap.hosts.length}`, sub: snap.hosts.filter(h => h.state !== 'up').map(h => h.name).join(', ') || 'All reporting' });
     if (net.wan) tiles.push({ c: net.wan.up ? 'ok' : 'bad', label: 'Internet', value: net.wan.up ? rate(net.wan.downBps).v : 'Down', unit: net.wan.up ? `${rate(net.wan.downBps).u} ↓` : '', sub: net.wan.up ? `${isNum(net.wan.latencyMs) ? `${net.wan.latencyMs} ms` : ''}${net.wan.isp ? ` · ${net.wan.isp}` : ''}` : net.wan.status || '' });
     if (net.devices.length) {
-      const upDev = net.devices.filter(d => d.state === 'connected').length;
-      tiles.push({ c: upDev === net.devices.length ? 'ok' : 'warn', label: 'Network', value: isNum(net.clients) ? `${net.clients}` : `${upDev}`, unit: isNum(net.clients) ? 'clients' : `/ ${net.devices.length} up`, sub: `${net.vlans ? `${net.vlans.length} networks · ` : ''}${upDev}/${net.devices.length} UniFi devices up` });
+      const active = net.devices.filter(d => !d.stored), storedN = net.devices.length - active.length;
+      const upDev = active.filter(d => d.state === 'connected').length;
+      tiles.push({ c: upDev === active.length ? 'ok' : 'warn', label: 'Network', value: isNum(net.clients) ? `${net.clients}` : `${upDev}`, unit: isNum(net.clients) ? 'clients' : `/ ${active.length} up`, sub: `${net.vlans ? `${net.vlans.length} networks · ` : ''}${upDev}/${active.length} UniFi devices up${storedN ? ` · ${storedN} stored` : ''}` });
     }
     if (b) tiles.push({ c: b.level, label: 'Last backup', value: b.lastOk ? clock(b.lastOk) : dash, unit: '', sub: `${b.lastOk ? `${when(b.lastOk).replace(/ \d.*$/, '')} · ` : ''}${isNum(b.sizeMB) ? mb(b.sizeMB) : ''}${b.next ? ` · next ${when(b.next)}` : ''}` });
     tiles.push({ c: u.pending.length ? 'info' : 'ok', label: 'Updates waiting', value: `${u.pending.length}`, unit: '', sub: u.pending.length ? u.pending.slice(0, 2).map(p => p.title).join(', ') + (u.pending.length > 2 ? '…' : '') : `${u.total} checked, all current` });
@@ -199,15 +201,28 @@
         <thead><tr><th>Device</th><th>State</th>${api ? '<th class="r">Clients</th><th class="r">Traffic</th>' : ''}<th class="r">CPU · Mem</th><th class="r">Temp</th><th>Uptime</th><th>Firmware</th></tr></thead>
         <tbody>${net.devices.map(d => `<tr>
           <td class="n">${esc(d.name)} <span class="stack">${esc(kind[d.kind] || d.kind)}${d.poe ? ` · PoE ${esc(d.poe.usedW)} of ${esc(d.poe.maxW)} W` : ''}</span></td>
-          <td class="st">${pill(d.level, cap(String(d.state || 'unknown').replace(/_/g, ' ')))}</td>
+          <td class="st">${d.stored
+            ? `${pill('off', 'Stored')} <button type="button" class="mini" data-store="${esc(d.name)}" data-on="0" title="Count ${esc(d.name)} again">Undo</button>`
+            : `${pill(d.level, cap(String(d.state || 'unknown').replace(/_/g, ' ')))}${d.level !== 'ok' && d.level !== 'unknown' && d.state !== 'connected' ? ` <button type="button" class="mini" data-store="${esc(d.name)}" data-on="1" title="Packed away on purpose: stop counting it as an alert until it's back online">Mark stored</button>` : ''}`}</td>
           ${api ? `<td class="r mono" data-label="Clients">${isNum(d.clients) ? esc(d.clients) : dash}</td><td class="r mono" data-label="Traffic">${esc(rateText(d.rateBps))}</td>` : ''}
           <td class="r mono" data-label="CPU · Mem">${isNum(d.cpu) || isNum(d.mem) ? `${fmt(d.cpu)}% · ${fmt(d.mem)}%` : dash}</td>
           <td class="r mono" data-label="Temp">${isNum(d.temp) ? `${esc(d.temp)}${esc(d.tempUnit)}` : dash}</td>
-          <td class="meta" data-label="Uptime">${d.state === 'connected' ? esc(ago(d.since)) : d.since ? `down ${esc(ago(d.since))}` : dash}</td>
+          <td class="meta" data-label="Uptime">${d.state === 'connected' ? esc(ago(d.since)) : d.stored ? `stored ${esc(ago(d.storedSince))}` : d.since ? `down ${esc(ago(d.since))}` : dash}</td>
           <td data-label="Firmware">${d.firmware ? (d.firmware.update ? pill('warn', `Update ${d.firmware.latest && d.firmware.latest !== 'newer' ? d.firmware.latest : 'ready'}`) : pill('ok', d.firmware.installed || 'Current')) : dash}</td>
         </tr>`).join('')}</tbody>
       </table></div>`;
   }
+
+  // Mark stored / Undo. The app answers with a fresh snapshot.
+  $('unifi').addEventListener('click', async e => {
+    const b = e.target.closest('[data-store]');
+    if (!b) return;
+    b.disabled = true;
+    try {
+      const r = await fetch('api/stored', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: b.dataset.store, stored: b.dataset.on === '1' }) });
+      if (r.ok) { snap = await r.json(); render(); } else { b.disabled = false; b.title = (await r.json().catch(() => ({}))).error || `HTTP ${r.status}`; }
+    } catch (err) { console.warn('stored', err); b.disabled = false; }
+  });
 
   // ---- hosts -----------------------------------------------------------------------------
   function renderHosts() {
@@ -257,7 +272,7 @@
       const rows = u.rows.filter(r => r.kind === kind);
       if (!rows.length) continue;
       if (title) html += `<div class="uptime-group">${esc(title)}</div>`;
-      html += rows.map(r => `<div class="uprow"><span class="nm" title="${esc(r.name)}">${esc(r.name)}</span><div class="strip" style="--n:${r.blocks.length}">${r.blocks.map((b, i) => { const k = label[b] ? b : 'x'; return `<i class="${k === 'u' ? '' : k}" title="${esc(clock(u.start + i * u.blockMin * MIN))}: ${label[k]}"></i>`; }).join('')}</div><span class="pct mono">${isNum(r.pct) ? `${r.pct}%` : dash}</span></div>`).join('');
+      html += rows.map(r => `<div class="uprow${r.stored ? ' stored' : ''}"><span class="nm" title="${esc(r.name)}">${esc(r.name)}</span><div class="strip" style="--n:${r.blocks.length}">${r.blocks.map((b, i) => { const k = label[b] ? b : 'x'; return `<i class="${k === 'u' ? '' : k}" title="${esc(clock(u.start + i * u.blockMin * MIN))}: ${label[k]}"></i>`; }).join('')}</div><span class="pct mono">${r.stored ? 'Stored' : isNum(r.pct) ? `${r.pct}%` : dash}</span></div>`).join('');
     }
     $('uptime').innerHTML = `${head('Uptime', `Last 24 hours · ${u.blockMin}-minute blocks`)}
       ${html || empty('Uptime appears here for a NAS, PCs, UniFi devices and containers once Home Assistant has them.')}
@@ -315,8 +330,9 @@
     const list = snap.incidents;
     $('log').classList.toggle('collapsed', !logOpen);
     if (!list) { $('log').innerHTML = logHead(0) + (logOpen ? empty('Reading history from Home Assistant…') : ''); return; }
-    const sev = { bad: 'bad', serious: 'serious', warn: 'warn', info: 'info', change: 'change' };
+    const sev = { bad: 'bad', serious: 'serious', warn: 'warn', info: 'info', change: 'change', stored: 'off' };
     const title = i => {
+      if (i.kind === 'down' && i.stored) return `${i.subject} is stored`;
       if (i.kind === 'down') return i.ongoing ? `${i.subject} is down` : `${i.subject} was down ${span(i.end - i.start)}`;
       if (i.kind === 'offline') return `${i.subject} stopped reporting`;
       if (i.kind === 'oom') return i.subject;
@@ -347,7 +363,7 @@
       try { fn(); } catch (e) { console.error(name, e); $(name).innerHTML = empty(`This panel couldn't be drawn (${e.message}).`, true); }
     }
     $('updated').textContent = `Updated ${clock(snap.generatedAt, { second: '2-digit' })}`;
-    $('foot').textContent = `Station Health ${snap.version} · view only: nothing here can start, stop, restart or change anything`;
+    $('foot').textContent = `Station Health ${snap.version} · view only: nothing here can start, stop, restart or change any device`;
   }
 
   async function load(force = false) {

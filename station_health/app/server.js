@@ -1,7 +1,8 @@
 'use strict';
 // Station Health: serves the page through Home Assistant ingress and answers
 // GET api/state with one snapshot (station.js). View only: nothing here can
-// start, stop, restart or change anything. No dependencies beyond Node.
+// start, stop, restart or change any device. The one thing it writes is its own
+// note of which UniFi devices are stored (POST api/stored). No dependencies beyond Node.
 //
 // Development: node station_health/tests/dev.js runs it against a fake Home
 // Assistant and a fake UniFi console, behind an ingress stand-in.
@@ -125,6 +126,21 @@ function postAllowed(req) {
   return /^application\/json\b/i.test(req.headers['content-type'] || '');
 }
 
+// A small JSON body, refused past `limit` bytes.
+function readJson(req, limit = 2048) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    // Past the limit the rest is read and dropped, so the reply still arrives.
+    req.on('data', c => { size += c.length; if (size <= limit) chunks.push(c); });
+    req.on('end', () => {
+      if (size > limit) return reject(new Error('too large'));
+      try { resolve(JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}')); } catch (e) { reject(e); }
+    });
+    req.on('error', reject);
+  });
+}
+
 // ---- server -----------------------------------------------------------------
 
 const server = http.createServer(async (req, res) => {
@@ -143,6 +159,17 @@ const server = http.createServer(async (req, res) => {
       if (!postAllowed(req)) return send(res, 403, { error: 'Request refused' });
       req.resume();
       return send(res, 200, await station.snapshot({ force: true, waitMs: 10_000 }));
+    }
+    // Marks a UniFi device as stored (packed away), or clears the mark. This is
+    // the page's own note and changes nothing on the device or in Home Assistant.
+    if (url.pathname === '/api/stored') {
+      if (req.method !== 'POST') return send(res, 405, { error: 'Use POST' }, { Allow: 'POST' });
+      if (!postAllowed(req)) return send(res, 403, { error: 'Request refused' });
+      let body;
+      try { body = await readJson(req); } catch { return send(res, 400, { error: 'Bad request' }); }
+      if (!body || typeof body.name !== 'string' || typeof body.stored !== 'boolean') return send(res, 400, { error: 'Bad request' });
+      if (!station.setStored(body.name, body.stored)) return send(res, 409, { error: 'Only a device that is offline can be marked stored.' });
+      return send(res, 200, await station.snapshot());
     }
     if (url.pathname === '/api/health') {
       return send(res, 200, { ok: true, version: VERSION, started: STARTED, homeAssistant: ha.available, unifi: unifi.configured, sources: station.status() });

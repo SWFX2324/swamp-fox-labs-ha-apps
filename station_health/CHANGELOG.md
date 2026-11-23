@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.7
+
+- **Mark a device as stored.** An offline UniFi device now has a **Mark stored** button.
+  A stored device stops counting as an alert and shows a grey "Stored" label in the
+  device list, Uptime and Recent Activity. The mark clears itself once the device is
+  connected again, and **Undo** removes it sooner. It's the app's own note, kept in
+  /data; nothing changes on the device or in Home Assistant.
+
 ## 1.0.6
 
 - **Updates are a vertical list.** Under each heading, every group has its own line

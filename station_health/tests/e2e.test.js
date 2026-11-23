@@ -5,6 +5,8 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const net = require('net');
@@ -83,6 +85,41 @@ test('problems show up in the summary', async t => {
   assert.match(text, /last automatic backup failed/);
   assert.doesNotMatch(text, /system_bridge/, 'the failing System Bridge entry is the PC problem, not listed twice');
   assert.ok(s.incidents.some(i => i.subject === 'Syncthing' && i.ongoing));
+});
+
+test('a device marked stored is not an alert; the mark is kept and can be undone', async t => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sh-stored-'));
+  const app = await start('ap_down', { DATA_DIR: dir });
+  t.after(() => { app.stop(); fs.rmSync(dir, { recursive: true, force: true }); });
+  const post = (body, headers = {}) => app.get('api/stored', { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: typeof body === 'string' ? body : JSON.stringify(body) });
+
+  let s = await app.state();
+  assert.match(s.summary.needs.map(n => n.text).join('\n'), /Garage AP is disconnected/);
+
+  // Refused: another site, a malformed body, and a device that's online.
+  assert.equal((await post({ name: 'Garage AP', stored: true }, { 'Sec-Fetch-Site': 'cross-site' })).status, 403);
+  assert.equal((await post('not json')).status, 400);
+  assert.equal((await post({ name: 'Garage AP', stored: 'yes' })).status, 400);
+  assert.equal((await post({ name: 'x'.repeat(3000), stored: true })).status, 400);
+  const online = s.network.devices.find(d => d.state === 'connected').name;
+  assert.equal((await post({ name: online, stored: true })).status, 409);
+  assert.equal((await post({ name: 'No Such Device', stored: true })).status, 409);
+  assert.equal((await app.get('api/stored')).status, 405);
+
+  const r = await post({ name: 'Garage AP', stored: true });
+  assert.equal(r.status, 200);
+  s = await r.json();
+  assert.doesNotMatch(s.summary.needs.map(n => n.text).join('\n'), /Garage AP/);
+  const ap = s.network.devices.find(d => d.name === 'Garage AP');
+  assert.equal(ap.stored, true);
+  assert.ok(Number.isFinite(ap.storedSince));
+  assert.ok(s.uptime.rows.find(x => x.key === 'unifi:Garage AP').stored);
+  assert.ok(s.incidents.filter(i => i.key === 'unifi:Garage AP' && i.ongoing).every(i => i.stored && i.severity === 'stored'));
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, 'stored.json'), 'utf8')).map(x => x.name), ['Garage AP']);
+
+  s = await (await post({ name: 'Garage AP', stored: false })).json();
+  assert.match(s.summary.needs.map(n => n.text).join('\n'), /Garage AP is disconnected/);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, 'stored.json'), 'utf8')), []);
 });
 
 test('a UniFi outage leaves Home Assistant data alone', async t => {

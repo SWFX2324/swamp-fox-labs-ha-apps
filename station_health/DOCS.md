@@ -5,7 +5,13 @@ PCs, Docker containers, your UniFi network and its VLANs, backups and updates. I
 a **Station Health** panel to the sidebar for administrators.
 
 It reads Home Assistant and, if you set it up, your UniFi console. It changes nothing
-in either: nothing on the page can start, stop, restart or change anything.
+in either: nothing on the page can start, stop, restart or change any device.
+
+**Stored devices.** If a UniFi device is offline on purpose, for example packed in a
+box, press **Mark stored** next to it. It stops counting as an alert and shows a grey
+"Stored" label instead. The mark clears itself the moment the device is connected
+again, and **Undo** removes it sooner. The mark is the app's own note, kept in its
+/data folder; it changes nothing on the device or in Home Assistant.
 
 ## Contents
 

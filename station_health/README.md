@@ -67,7 +67,8 @@ connection, which is why the app can also read your UniFi console itself, with a
 
 ## View only, and private
 
-- Nothing on the page can start, stop, restart or change anything. The app only sends
+- Nothing on the page can start, stop, restart or change any device. The one thing
+  it saves is its own note of which UniFi devices you've marked as stored. The app only sends
   read requests to Home Assistant and, after signing in, only GET requests to the
   UniFi console.
 - The panel is for Home Assistant administrators only.

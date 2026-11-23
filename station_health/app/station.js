@@ -59,6 +59,9 @@ class Station {
     Object.assign(this, { ha, unifi, dataDir, now, sampleMs });
     this.samplesFile = dataDir ? path.join(dataDir, 'wan-samples.json') : null;
     this.samples = this.loadSamples();
+    // UniFi devices marked "stored" (packed away on purpose): name -> when marked.
+    this.storedFile = dataDir ? path.join(dataDir, 'stored.json') : null;
+    this.stored = this.loadStored();
 
     this.states = new Source('states', { ttl: 20_000, now, load: () => ha.states() });
     this.registry = new Source('registry', {
@@ -98,6 +101,48 @@ class Station {
   saveSamples() {
     if (!this.samplesFile) return;
     try { fs.writeFileSync(this.samplesFile, JSON.stringify(this.samples)); } catch (e) { console.warn(`[samples] ${e.message}`); }
+  }
+
+  // ---- stored devices --------------------------------------------------------------
+  // A stored device isn't an alert. The mark clears itself once the device is
+  // connected again, so nothing can stay hidden by mistake.
+
+  loadStored() {
+    if (!this.storedFile) return new Map();
+    try {
+      const j = JSON.parse(fs.readFileSync(this.storedFile, 'utf8'));
+      return new Map((Array.isArray(j) ? j : []).filter(x => x && typeof x.name === 'string' && x.name.length <= 100)
+        .map(x => [x.name, Number.isFinite(x.since) ? x.since : this.now()]));
+    } catch { return new Map(); }
+  }
+
+  saveStored() {
+    if (!this.storedFile) return;
+    try { fs.writeFileSync(this.storedFile, JSON.stringify([...this.stored].map(([name, since]) => ({ name, since })))); } catch (e) { console.warn(`[stored] ${e.message}`); }
+  }
+
+  // Only a device that exists and isn't connected can be marked stored.
+  setStored(name, on) {
+    if (typeof name !== 'string' || !name || name.length > 100) return false;
+    if (!on) {
+      if (this.stored.delete(name)) this.saveStored();
+      return true;
+    }
+    const d = this.build(false).network.devices.find(x => x.name === name);
+    if (!d || d.state === 'connected') return false;
+    if (!this.stored.has(name)) { this.stored.set(name, this.now()); this.saveStored(); }
+    return true;
+  }
+
+  applyStored(s) {
+    let changed = false;
+    for (const d of s.network.devices) {
+      if (!this.stored.has(d.name)) continue;
+      if (d.state === 'connected') { this.stored.delete(d.name); changed = true; continue; }
+      d.stored = true;
+      d.storedSince = this.stored.get(d.name);
+    }
+    if (changed) this.saveStored();
   }
 
   async sample() {
@@ -158,6 +203,7 @@ class Station {
       integrations: M.integrations(ix),
       unifiError: this.unifiSource?.error || null,
     };
+    this.applyStored(s);
     if (!withHistory) return s;
 
     const hist = this.history.data;
@@ -166,6 +212,9 @@ class Station {
     if (s.uptime && this.unifiSource) s.uptime.rows.unshift(this.wanRow(s.uptime.start, s.uptime.blockMin, now));
     const changeList = hist ? M.changes(hist.changes) : [];
     s.incidents = hist ? M.incidents(trackerList, hist.states, changeList, s.network.newDevices || [], now) : null;
+    const storedKeys = new Set(s.network.devices.filter(d => d.stored).map(d => `unifi:${d.name}`));
+    for (const r of s.uptime?.rows || []) if (storedKeys.has(r.key)) r.stored = true;
+    for (const i of s.incidents || []) if (i.ongoing && storedKeys.has(i.key)) { i.stored = true; i.severity = 'stored'; }
     s.wanHistory = this.unifiSource ? this.samples.map(x => ({ t: x.t, down: x.down ?? null, up: x.upl ?? null })) : null;
     s.summary = M.summary(s, now);
     return s;

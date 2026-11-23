@@ -595,7 +595,7 @@ function summary(s, now) {
   const badC = s.containers.list.filter(c => c.level === 'bad' || c.level === 'warn');
   if (badC.length) needs.push({ level: badC.some(c => c.level === 'bad') ? 'bad' : 'warn', text: `${badC.length === 1 ? `Container ${badC[0].name} is` : `${badC.length} containers are`} ${badC.length === 1 ? badC[0].state : 'not running'}.` });
   if (s.network.wan && !s.network.wan.up) needs.push({ level: 'bad', text: `The internet connection is down (${s.network.wan.status || 'no status'}).` });
-  for (const d of s.network.devices) if (d.level !== 'ok' && d.level !== 'unknown') needs.push({ level: d.level, text: `${d.name} is ${String(d.state).replace(/_/g, ' ')}${d.since ? ` (${ago(now - d.since)})` : ''}.` });
+  for (const d of s.network.devices) if (!d.stored && d.level !== 'ok' && d.level !== 'unknown') needs.push({ level: d.level, text: `${d.name} is ${String(d.state).replace(/_/g, ' ')}${d.since ? ` (${ago(now - d.since)})` : ''}.` });
   if (s.backups?.failed) needs.push({ level: 'warn', text: 'The last automatic backup failed.' });
   else if (s.backups?.stale) needs.push({ level: 'warn', text: `The last good backup is ${ago(now - s.backups.lastOk)} old.` });
   const pcOffline = s.hosts.some(h => h.kind === 'pc' && h.state === 'offline');
