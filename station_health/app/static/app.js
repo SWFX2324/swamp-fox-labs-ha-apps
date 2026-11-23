@@ -281,7 +281,8 @@
       ${u.pending.length ? `<div class="meta">${u.pending.length} update${u.pending.length === 1 ? '' : 's'} waiting. Install them where you normally do; nothing here installs anything.</div>
         <ul class="pending">${u.pending.map(p => `<li><span>${esc(p.title)} <span class="muted">· ${esc(p.group)}</span></span><span>${esc(p.installed || '')}${p.latest ? ` → ${esc(p.latest)}` : ''}</span></li>`).join('')}</ul>`
         : `<div class="meta">Everything is current.</div>`}
-      <div class="updlist" style="margin-top:10px">${u.groups.map(g => pill(g.pending ? 'warn' : g.unknown === g.total ? 'off' : 'ok', `${g.name}${g.pending ? ` · ${g.pending}` : ''}`)).join('')}</div>
+      <div class="updsecs">${[...new Set(u.groups.map(g => g.section || 'Devices'))].map(sec => `<div class="updsec-name">${esc(sec)}</div>
+        <div class="updlist">${u.groups.filter(g => (g.section || 'Devices') === sec).map(g => `<span title="${esc(`${g.total} item${g.total === 1 ? '' : 's'}${g.pending ? `, ${g.pending} waiting` : ''}`)}">${pill(g.pending ? 'warn' : g.unknown === g.total ? 'off' : 'ok', `${g.name}${g.pending ? ` · ${g.pending}` : ''}`)}</span>`).join('')}</div>`).join('')}</div>
       <p class="note"><a href="/config/updates" target="_top">Open Updates in Home Assistant</a></p>`;
   }
 

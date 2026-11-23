@@ -370,8 +370,14 @@ function network(ix, api, unit, now) {
 
 const UPDATE_GROUP = {
   hassio: e => (/^update\.home_assistant_(core|supervisor|operating_system)_update$/.test(e) ? 'Home Assistant' : 'Apps'),
-  portainer: () => 'Container images', unifi: () => 'UniFi', synology_dsm: () => 'NAS', system_bridge: () => 'PC',
+  hacs: () => 'HACS', marketplace: () => 'HACS', portainer: () => 'Container images', unifi: () => 'UniFi', synology_dsm: () => 'NAS', system_bridge: () => 'PC',
+  raspberry_pi: () => 'Raspberry Pi',
 };
+// Groups shown together under a heading, in this order; anything else is a device of its own.
+const UPDATE_SECTION = { 'Home Assistant': 'Home Assistant', Apps: 'Home Assistant', HACS: 'Home Assistant', UniFi: 'Network & storage', NAS: 'Network & storage', 'Container images': 'Containers' };
+const SECTION_ORDER = ['Home Assistant', 'Devices', 'Network & storage', 'Containers'];
+const GROUP_ORDER = ['Home Assistant', 'Apps', 'HACS', 'UniFi', 'NAS'];
+const groupRank = n => (GROUP_ORDER.includes(n) ? GROUP_ORDER.indexOf(n) : GROUP_ORDER.length);
 
 function updates(ix) {
   const items = [];
@@ -388,7 +394,7 @@ function updates(ix) {
   }
   const groups = new Map();
   for (const u of items) {
-    if (!groups.has(u.group)) groups.set(u.group, { name: u.group, total: 0, pending: 0, unknown: 0 });
+    if (!groups.has(u.group)) groups.set(u.group, { name: u.group, section: UPDATE_SECTION[u.group] || 'Devices', total: 0, pending: 0, unknown: 0 });
     const g = groups.get(u.group);
     g.total++;
     if (u.state === 'on') g.pending++;
@@ -397,7 +403,7 @@ function updates(ix) {
   return {
     total: items.length,
     pending: items.filter(u => u.state === 'on').map(({ entity, title, group, installed, latest }) => ({ entity, title, group, installed, latest })),
-    groups: [...groups.values()].sort((a, b) => b.pending - a.pending || a.name.localeCompare(b.name)),
+    groups: [...groups.values()].sort((a, b) => SECTION_ORDER.indexOf(a.section) - SECTION_ORDER.indexOf(b.section) || groupRank(a.name) - groupRank(b.name) || a.name.localeCompare(b.name)),
   };
 }
 

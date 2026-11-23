@@ -134,6 +134,9 @@ for (const [ssid, c] of [['Home', 14], ['Things', 19], ['Guests', 0]]) {
 for (const [id, name, inst, latest] of [['home_assistant_core_update', 'Home Assistant Core', '2026.11.1', '2026.11.1'], ['home_assistant_operating_system_update', 'Home Assistant Operating System', '17.0', '17.0'], ['home_assistant_supervisor_update', 'Home Assistant Supervisor', '2026.11.0', '2026.11.0'], ['station_health_update', 'Station Health', '1.0.0', '1.0.0'], ['samba_share_update', 'Samba share', '12.5.4', '12.5.4']]) {
   entity(null, `update.${id}`, inst === latest ? 'off' : 'on', { installed_version: inst, latest_version: latest, friendly_name: `${name} Update`, title: name }, { platform: 'hassio' });
 }
+// A HACS card and a single-board computer's firmware, each reporting through its own platform.
+entity(null, 'update.sample_card_update', 'off', { installed_version: '2.1.0', latest_version: '2.1.0', friendly_name: 'Sample Card' }, { platform: 'marketplace' });
+entity(null, 'update.sbc_firmware', 'off', { installed_version: '2026.10.01', latest_version: '2026.10.01', friendly_name: 'Board Firmware' }, { platform: 'raspberry_pi' });
 const lastOk = T0 - (switches.has('backup_failed') ? 26 * HOUR : 3 * HOUR);
 entity(null, 'sensor.backup_last_successful_automatic_backup', iso(lastOk), {}, { platform: 'backup' });
 entity(null, 'sensor.backup_last_attempted_automatic_backup', iso(switches.has('backup_failed') ? T0 - 2 * HOUR : lastOk - 3 * MIN), {}, { platform: 'backup' });

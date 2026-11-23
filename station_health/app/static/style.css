@@ -186,6 +186,9 @@ td .stack, td small { color: var(--muted); font-weight: 400; font-size: 12px; }
 /* ---- maintenance ---- */
 .divider { height: 1px; background: var(--border); margin: 14px 0; }
 .updlist { display: flex; flex-wrap: wrap; gap: 6px; }
+.updsecs { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 14px; align-items: center; margin-top: 12px; }
+.updsec-name { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+@media (max-width: 520px) { .updsecs { grid-template-columns: 1fr; gap: 4px; } .updsec-name { margin-top: 6px; } }
 .pending { list-style: none; margin: 8px 0 0; padding: 0; font-size: 13px; }
 .pending li { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-top: 1px solid var(--border); }
 .pending li span:last-child { color: var(--muted); font-family: var(--mono); font-size: 12px; white-space: nowrap; }

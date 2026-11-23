@@ -196,4 +196,18 @@ test('updates: grouped by where they come from; disabled entities left out', () 
   const u = M.updates(world({ states, entities }));
   assert.equal(u.total, 2);
   assert.deepEqual(u.pending.map(p => [p.title, p.group]), [['grafana', 'Container images']]);
+  assert.deepEqual(u.groups.map(g => [g.name, g.section]), [['Home Assistant', 'Home Assistant'], ['Container images', 'Containers']]);
+});
+
+test('updates: sections in a fixed order, HACS and unknown devices placed', () => {
+  const ids = [['update.home_assistant_core_update', 'hassio'], ['update.samba_update', 'hassio'], ['update.bambu_lab', 'marketplace'], ['update.pi_firmware', 'raspberry_pi'], ['update.gw_firmware', 'unifi'], ['update.nas_update', 'synology_dsm'], ['update.x_image_update_available', 'portainer'], ['update.printer', 'some_vendor']];
+  const entities = ids.map(([e, p]) => ent(e, p));
+  const states = ids.map(([e]) => st(e, 'off', { installed_version: '1', latest_version: '1', friendly_name: 'Thing' }));
+  const u = M.updates(world({ states, entities }));
+  assert.deepEqual(u.groups.map(g => [g.section, g.name]), [
+    ['Home Assistant', 'Home Assistant'], ['Home Assistant', 'Apps'], ['Home Assistant', 'HACS'],
+    ['Devices', 'Raspberry Pi'], ['Devices', 'Thing'],
+    ['Network & storage', 'UniFi'], ['Network & storage', 'NAS'],
+    ['Containers', 'Container images'],
+  ]);
 });

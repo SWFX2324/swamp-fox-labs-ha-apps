@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.5
+
+- **Updates are sorted into rows:** Home Assistant, Devices, Network & storage and
+  Containers, each with a heading and a fixed order, instead of one line that
+  reshuffled whenever something had an update waiting.
+- **HACS add-ons share one chip.** Custom integrations and cards installed through
+  HACS are grouped as "HACS" in the Home Assistant row; each one still appears by name
+  when its update is waiting.
+- **Raspberry Pi firmware shows as "Raspberry Pi"** in Devices. Hovering a chip shows
+  how many items it covers.
+
 ## 1.0.4
 
 - **UniFi devices fit a phone.** Each device is a card with its name and state on top
